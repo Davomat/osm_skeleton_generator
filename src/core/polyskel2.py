@@ -203,7 +203,6 @@ class _LAVertex:
     def __str__(self):
         return "Vertex ({:.2f};{:.2f})".format(self.point.x, self.point.y)
 
-
     def __lt__(self, other):
         if isinstance(other, _LAVertex):
             return self.point.x < other.point.x
@@ -337,7 +336,7 @@ class _SLAV:
                 events.append(next_event)
 
         event.vertex.invalidate()
-        return (Subtree(event.intersection_point, event.distance, sinks), events)
+        return Subtree(event.intersection_point, event.distance, sinks), events
 
 
 class _LAV:
@@ -354,7 +353,7 @@ class _LAV:
             lav._len += 1
             vertex = _LAVertex(point, LineSegment2(prev, point), LineSegment2(point, next))
             vertex.lav = lav
-            if lav.head == None:
+            if lav.head is None:
                 lav.head = vertex
                 vertex.prev = vertex.next = vertex
             else:
@@ -411,16 +410,15 @@ class _LAV:
 
     def __iter__(self):
         cur = self.head
-        count = 0
+        counter = 0
         while True:
             yield cur
             cur = cur.next
-            count += 1
+            counter += 1
             if cur == self.head:
-                raise StopIteration
-            elif count > self._len: #TODO: find the real mistake
-                raise StopIteration
-
+                break  # raise StopIteration
+            elif counter > self._len:  # TODO: find the real mistake
+                break  # raise StopIteration
 
     def _show(self):
         cur = self.head
@@ -476,12 +474,10 @@ def skeletonize(polygon, holes=None):
             v = vertex.next_event()
             prioque.put(v)
 
-
     while not (prioque.empty() or slav.empty()):
 
         #log.debug("SLAV is %s", [repr(lav) for lav in slav])
         i = prioque.get()
-
 
         if isinstance(i, _EdgeEvent):
             if not i.vertex_a.is_valid or not i.vertex_b.is_valid:
