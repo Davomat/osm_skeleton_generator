@@ -4,13 +4,10 @@
 Implementation of the straight skeleton algorithm as described by Felkel and Obdržálek in their 1998 conference paper Straight skeleton implementation.
 """
 
-import logging
 import heapq
 from core.euclid import *
 from itertools import *
 from collections import namedtuple
-
-#log = logging.getLogger("__name__")
 
 
 class Debug:

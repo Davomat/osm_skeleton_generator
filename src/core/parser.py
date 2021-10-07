@@ -1,4 +1,5 @@
-import xml.etree.ElementTree as ET # TODO: replace with better Library ET doesn't ignore WhiteSpace --> 'xyz' != ' xyz '
+import xml.etree.ElementTree as ET
+# TODO: replace with better Library ET doesn't ignore WhiteSpace --> 'xyz' != ' xyz '
 
 from core.connection import *
 from core.room import *
@@ -28,23 +29,22 @@ class Parser:
                 parse_door(element, self.doors, False, root)
 
             elif element.find("tag[@v='room']") is not None or element.find("tag[@v='corridor']") is not None:
-                polygon,level = parse_room(element, root)
+                polygon, level = parse_room(element, root)
                 room = Room(polygon, level)
                 self.rooms.append(room)
 
         # parse relations
         for element in root.findall("./relation"):
             if element.find("tag[@v='connection']") is not None:  # find connections between different levels
-                members,type = parse_connection(element,root)
+                members, type = parse_connection(element, root)
                 connection = Connection(members, type)
                 self.connections.append(connection)
 
             elif element.find("tag[@v='multipolygon']") is not None:  # Multipolygone finden
-                polygon,level,barriers = parse_multipolygon(element,root)
+                polygon, level, barriers = parse_multipolygon(element, root)
                 if polygon is not None:
                     room = Room(polygon, level, barriers)
                     self.rooms.append(room)
-
 
         # remove duplicate rooms(---> Multipolygon)
         for room in self.rooms:
@@ -74,7 +74,7 @@ class Parser:
             osm_way = ET.Element("way", id=str(osm_way_id))
             osm_way_id -= 1
             level = way['level']
-            if ';' in level: #way connecting two levels --> only two nodes
+            if ';' in level:  # way connecting two levels --> only two nodes
                 levels = level.split(';')
                 if levels[0] not in self.nodes:
                     self.nodes[levels[0]] = {}
@@ -112,7 +112,7 @@ class Parser:
                             self.nodes[level][node] = osm_node_id
                             osm_node_id -= 1
                         ET.SubElement(osm_root, "node", id=str(self.nodes[level][node]), lat=str(node[0]),
-                                          lon=str(node[1]))
+                                      lon=str(node[1]))
                         processed[level].append(node)
                     ET.SubElement(osm_way, "nd", ref=str(self.nodes[way['level']][node]))
 

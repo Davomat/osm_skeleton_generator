@@ -14,7 +14,7 @@ class Room:
             self.barriers = []
         else:
             self.barriers = copy.deepcopy(barriers)
-        simplify_room(self.polygon,self.barriers)
+        simplify_room(self.polygon, self.barriers)
         if not anti_clockwise(self.polygon):
             self.polygon.reverse()
 
@@ -97,7 +97,7 @@ class Room:
                                 new_way += way['way'][1:]
                                 processed_ways.append(way['way'])
                                 change = True
-            if new_way != []:
+            if new_way:  # equals expression "if new_way != []:"
                 new_ways.append(write_python_way(new_way, self.level))
 
         self.ways = new_ways
@@ -116,8 +116,6 @@ class Room:
                                 count += 1
                     if count > 2:
                         self.decision_nodes.append(node)
-
-
 
     def simplify_ways(self):
         self.remove_duplicate_ways()
@@ -190,8 +188,7 @@ class Room:
             i = 0
             change = False
             while i < len(self.ways):
-                if self.ways[i]['way'][0] not in self.decision_nodes and self.ways[i]['way'][
-                    -1] not in self.decision_nodes:
+                if self.ways[i]['way'][0] not in self.decision_nodes and self.ways[i]['way'][-1] not in self.decision_nodes:
                     if self.ways[i]['way'][0] not in self.doors and self.ways[i]['way'][-1] not in self.doors:
                         del self.ways[i]
                         change = True
@@ -201,7 +198,6 @@ class Room:
                     i += 1
                 if change:
                     self.long_ways()  # update
-
 
     # necessary because otherwise some nodes might be mistaken for decision nodes
     def remove_duplicate_ways(self):
@@ -228,24 +224,23 @@ class Room:
         for way in self.ways:
             first_node = way['way'][0]
             last_node = way['way'][-1]
-            if (first_node,last_node) not in excluded:
-                excluded.append((first_node,last_node))
-                excluded.append((last_node,first_node))
+            if (first_node, last_node) not in excluded:
+                excluded.append((first_node, last_node))
+                excluded.append((last_node, first_node))
                 if first_node not in all_relevant_nodes:
                     all_relevant_nodes.append(first_node)
                 if last_node not in all_relevant_nodes:
                     all_relevant_nodes.append(last_node)
         i = 0
-        while i<len(all_relevant_nodes)-1:
+        while i < len(all_relevant_nodes) - 1:
             first_node = all_relevant_nodes[i]
             j = i + 1
             while j < len(all_relevant_nodes):
                 last_node = all_relevant_nodes[j]
-                if (first_node,last_node) not in excluded:
-                    if way_inside_room([first_node,last_node],self.polygon,self.barriers) and not way_intersects_with_way([first_node,last_node],self.ways):
-                        new_ways.append(write_python_way([first_node,last_node],self.level))
+                if (first_node, last_node) not in excluded:
+                    if way_inside_room([first_node, last_node], self.polygon, self.barriers) and not way_intersects_with_way([first_node, last_node], self.ways):
+                        new_ways.append(write_python_way([first_node, last_node], self.level))
                 j += 1
-            i+=1
+            i += 1
         self.ways.extend(new_ways)
         self.split_intersecting_ways()
-
