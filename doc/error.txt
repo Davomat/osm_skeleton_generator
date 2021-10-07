@@ -1,0 +1,42 @@
+nhg: tags stehen im way
+
+  <way id='-56949' action='modify'>
+    <nd ref='-53767' />
+    <nd ref='-52499' />
+    ...
+    <nd ref='-55837' />
+    <nd ref='-53767' />
+    <tag k='indoor' v='room' />
+    <tag k='level' v='1' />
+    <tag k='name' v='Hörsaal' />
+    <tag k='ref' v='N115' />
+  </way>
+  
+  <relation id='-57513' action='modify'>
+    <member type='way' ref='-56949' role='outer' />
+    <member type='way' ref='-57043' role='inner' />
+    ...
+    <member type='way' ref='-56971' role='inner' />
+    <tag k='type' v='multipolygon' />
+  </relation>
+  
+
+ub: tags stehen im multipolygon
+  
+  <way id='126668' visible='true' version='1' changeset='123456789' timestamp='2021-06-23T07:16:19Z' user='JohnDoe' uid='12345678'>
+    <nd ref='217260' />
+    <nd ref='217131' />
+	...
+    <nd ref='217261' />
+    <nd ref='217260' />
+  </way>
+  
+  <relation id='100958' visible='true' version='1' changeset='123456789' timestamp='2021-06-23T07:16:19Z' user='JohnDoe' uid='12345678'>
+    <member type='way' ref='126721' role='inner' />
+    <member type='way' ref='126668' role='outer' />
+    <tag k='indoor' v='corridor' />
+    <tag k='level' v='2' />
+    <tag k='ref' v='214' />
+    <tag k='type' v='multipolygon' />
+  </relation>
+  
