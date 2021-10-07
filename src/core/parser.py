@@ -1,10 +1,7 @@
 import xml.etree.ElementTree as ET # TODO: replace with better Library ET doesn't ignore WhiteSpace --> 'xyz' != ' xyz '
-import sys
 
-from core.room import *
 from core.connection import *
-import logging
-from core.osm_helper import *
+from core.room import *
 
 
 class Parser:
@@ -58,7 +55,7 @@ class Parser:
                     else:
                         self.rooms.remove(room2)
 
-    def find_ways(self):
+    def find_ways(self, simplify_ways, door_to_door):
         for room in self.rooms:
             room.add_doors(self.doors)
             self.ways += room.find_ways(simplify_ways, door_to_door)
@@ -128,25 +125,3 @@ class Parser:
             osm_root.append(osm_way)
         tree = ET.ElementTree(osm_root)
         tree.write(file, encoding='utf-8', xml_declaration=True)
-
-
-
-if __name__ == '__main__':
-    log = logging.getLogger("__name__")
-    if len(sys.argv) < 3:
-        log("You need to specify an input and an output file!")
-
-    if sys.argv[1] == sys.argv[2]:
-        log("the input file and the output file must not be the same!")
-    else:
-        parser = Parser(sys.argv[1])
-        door_to_door = False
-        simplify_ways = False
-        remove_deadends = False
-        if '-dd' in sys.argv or 'dd' in sys.argv:
-            door_to_door = True
-        if '-sw' in sys.argv or 'sw' in sys.argv:
-            simplify_ways = True
-        parser.find_ways()
-        parser.write_osm(sys.argv[2])
-                                    
