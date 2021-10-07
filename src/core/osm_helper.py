@@ -2,8 +2,7 @@ from core.geometry import *
 
 
 def write_python_way(nodes, level, type='footway'):
-    way = {'way': nodes, 'level': level}
-    way['type'] = type
+    way = {'way': nodes, 'level': level, 'type': type}
     return way
 
 
@@ -33,10 +32,10 @@ def parse_room(element, root):
         y = float(node.get('lon'))
         polygon.append((x, y))
     level = element.find("tag[@k='level']").get('v')
-    return polygon,level
+    return polygon, level
 
 
-def parse_connection(element,root):
+def parse_connection(element, root):
     connections = []
     for member in element.findall("member"):
         polygon = []
@@ -48,15 +47,14 @@ def parse_connection(element,root):
             x = float(node.get('lat'))
             y = float(node.get('lon'))
             polygon.append((x, y))
-        connection = {'connector': polygon}
-        connection['level'] = connector.find("tag[@k='level']").get('v')
+        connection = {'connector': polygon, 'level': connector.find("tag[@k='level']").get('v')}
         connections.append(connection)
         if element.find(
                 "tag[@v='stairs']") is not None:
             type = 'stairs'
         else:  # edit if there are more types of connections
             type = 'elevator'
-    return connections,type
+    return connections, type
 
 
 def parse_multipolygon(element, root):
@@ -85,7 +83,6 @@ def parse_multipolygon(element, root):
             x = float(node.get('lat'))
             y = float(node.get('lon'))
             polygon.append((x, y))
-        return polygon,level,barriers
+        return polygon, level, barriers
     else:
-        return None,None,None
-
+        return None, None, None

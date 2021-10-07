@@ -15,8 +15,9 @@ def in_interval(point1, point2, point3):
     y2 = point2[1]
     x3 = point3[0]
     y3 = point3[1]
-    if almost_same_point((x1, y1), (x2, y2)) or almost_same_point((x1, y1), (x3, y3)) or almost_same_point((x2, y2), (
-            x3, y3)) :
+    if almost_same_point((x1, y1), (x2, y2)) \
+            or almost_same_point((x1, y1), (x3, y3)) \
+            or almost_same_point((x2, y2), (x3, y3)):
         return False
     if x1 < x2:
         if x3 < x1 or x3 > x2:
@@ -59,7 +60,7 @@ def get_line(point1, point2):
 # find the intersection between two lines (if there is one)
 def intersection(m1, m2, b1, b2):
     if m1 is None and m2 is None:
-        return None # either no intersection or infinite number of intersections
+        return None  # either no intersection or infinite number of intersections
 
     if m1 is None:
         x2 = b1
@@ -75,7 +76,7 @@ def intersection(m1, m2, b1, b2):
     else:
         x2 = (b2 - b1) / (m1 - m2)
         y2 = m1 * x2 + b1
-    return (x2, y2)
+    return x2, y2
 
 
 # the points in the polygon must be in order!
@@ -87,7 +88,7 @@ def intersection(m1, m2, b1, b2):
 # ---> Gauß's area formula https://en.wikipedia.org/wiki/Shoelace_formula
 def anti_clockwise(polygon):
     sum = 0
-    x,y = zip(*polygon)
+    x, y = zip(*polygon)
     length = len(polygon)
     index = length - 1
     index_next = 0
@@ -104,7 +105,7 @@ def point_inside_polygon(point, polygon):
         return False
     count = 0
     for polygon_point1, polygon_point2 in zip(polygon, polygon[1:] + polygon[:1]):
-        if point_is_on_edge(point,[polygon_point1,polygon_point2]):
+        if point_is_on_edge(point, [polygon_point1, polygon_point2]):
             return False
         if polygon_point1[0] >= point[0] or polygon_point2[0] >= point[0]:
             if almost_same(point[1], polygon_point1[1]):
@@ -116,7 +117,7 @@ def point_inside_polygon(point, polygon):
             else:
                 m, b = get_line(polygon_point1, polygon_point2)
                 # intersection with a horizontal line through the point
-                intersection_point = intersection(m, 0, b,point[1])
+                intersection_point = intersection(m, 0, b, point[1])
                 if intersection_point:
                     if intersection_point[0] > point[0]:
                         if in_interval(polygon_point1, polygon_point2, intersection_point):
@@ -154,7 +155,7 @@ def almost_same_point(point1, point2):
 
 
 def almost_same(value1, value2):
-    return math.isclose(value1,value2, abs_tol=0.00000001)
+    return math.isclose(value1, value2, abs_tol=0.00000001)
 
 
 def polygon_intersection(way, polygon):
@@ -170,7 +171,7 @@ def polygon_intersection(way, polygon):
                             in_interval(way[i], way[i + 1], intersection_point):
                         if not almost_same_point(intersection_point, way[i]) and \
                                 not almost_same_point(intersection_point, way[i + 1]):
-                                return True
+                            return True
 
     return False
 
@@ -207,7 +208,7 @@ def get_orthogonal_line(m, point):
 def add_doors_to_polygon(polygon, all_doors):
     doors = []
     index = 0
-    index_prev = len(polygon) -1
+    index_prev = len(polygon) - 1
     change = True
     while change:
         change = False
@@ -248,16 +249,16 @@ def way_is_valid(point1, point2, polygon, doors, barriers):
     return False
 
 
-#remove every point that lies on the edge between two other points
+# remove every point that lies on the edge between two other points
 def simplify_polygon(polygon):
     index = 0
-    index_prev = len(polygon) -1
+    index_prev = len(polygon) - 1
     index_next = 1
     while index_next < len(polygon):
         point = polygon[index]
         point_prev = polygon[index_prev]
         point_next = polygon[index_next]
-        if point_is_on_edge(point,[point_prev, point_next]):
+        if point_is_on_edge(point, [point_prev, point_next]):
             del polygon[index]
             if index == 0:
                 index_prev -= 1
@@ -267,20 +268,22 @@ def simplify_polygon(polygon):
             index_next += 1
 
 
-def simplify_room(polygon,barriers):
+def simplify_room(polygon, barriers):
     simplify_polygon(polygon)
     for barrier in barriers:
         simplify_polygon(barrier)
 
-def way_intersects_with_way(way,ways):
-    m,b = get_line(way[0],way[1])
+
+def way_intersects_with_way(way, ways):
+    m, b = get_line(way[0], way[1])
     for way2 in ways:
         i = 0
-        while i < len(way2['way']) -1:
-            m2,b2 = get_line(way2['way'][i],way2['way'][i+1])
+        while i < len(way2['way']) - 1:
+            m2, b2 = get_line(way2['way'][i], way2['way'][i+1])
             intersection_point = intersection(m, m2, b, b2)
             if intersection_point:
-                if in_interval(way[0], way[1], intersection_point) and in_interval(way2['way'][i], way2['way'][i + 1], intersection_point):
+                if in_interval(way[0], way[1], intersection_point) \
+                        and in_interval(way2['way'][i], way2['way'][i + 1], intersection_point):
                     return True
             i += 1
     return False

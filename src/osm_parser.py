@@ -2,6 +2,7 @@ import sys
 
 from core.parser import Parser
 
+
 if __name__ == '__main__':
     if len(sys.argv) < 3:
         raise AttributeError("You need to specify an input and an output file!")

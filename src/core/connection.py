@@ -14,15 +14,14 @@ class Connection:
             level = connector['level']
             centres.append({'level': level, 'centre': centre})
 
-
             if level in all_doors:  # check if there are any doors on the same level
                 doors = add_doors_to_polygon(connector['connector'], all_doors[level])
                 for door in doors:
-                    self.ways.append(write_python_way([centre, door], level,self.type))
+                    self.ways.append(write_python_way([centre, door], level, self.type))
 
         if self.type == 'stairs':
             for i in range(len(centres) - 1):
-                self.ways.append(write_python_way([centres[i]['centre'], centres[i + 1]['centre']],centres[i]['level'] + ';' + centres[i + 1]['level'], self.type))
+                self.ways.append(write_python_way([centres[i]['centre'], centres[i + 1]['centre']], centres[i]['level'] + ';' + centres[i + 1]['level'], self.type))
         else:  # elevator
             i = 0
             while i < len(centres) - 1:
@@ -33,4 +32,3 @@ class Connection:
                     j = j + 1
                 i = i + 1
         return self.ways
-
