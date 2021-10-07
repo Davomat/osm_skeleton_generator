@@ -1,4 +1,4 @@
-from osm_helper import *
+from core.osm_helper import *
 
 
 class Connection:

@@ -1,9 +1,10 @@
 import xml.etree.ElementTree as ET # TODO: replace with better Library ET doesn't ignore WhiteSpace --> 'xyz' != ' xyz '
 import sys
-from room import *
-from connection import *
+
+from core.room import *
+from core.connection import *
 import logging
-from osm_helper import *
+from core.osm_helper import *
 
 
 class Parser:
