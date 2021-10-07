@@ -2,15 +2,40 @@ from core.osm_helper import *
 
 
 class Connection:
-    def __init__(self, members, type):
-        self.members = members
-        self.type = type
+    """
+    A representation of a link between several floors saved as ways.
+
+    Args
+    ----
+    members : list[dict[str, Union[list[tuple[float, float]], str]]]
+        A list of polygons that are connected and their level.
+    con_type : str
+        The type of connection between the members (stairs/elevator).
+
+    Attributes
+    ----------
+    members : list[dict[str, Union[list[tuple[float, float]], str]]]
+        A list of polygons (that are connected) and their level.
+    con_type : str
+        The type of connection between the members (stairs/elevator).
+    ways : list[dict[str, Union[list[tuple[float, float]], str]]]
+        The calculated ways with their type and level information for later navigation.
+    """
+
+    def __init__(self, members: list[dict[str, Union[list[tuple[float, float]], str]]], con_type: str):
+        self.members: list[dict[str, Union[list[tuple[float, float]], str]]] = members
+        self.type = con_type
         self.ways = []
 
-    def find_ways(self, all_doors):
+    def find_ways(self, all_doors: dict[str, list[tuple[float, float]]]) \
+            -> list[dict[str, Union[list[tuple[float, float]], str]]]:
+        """
+        Calculates the ways for navigation inside the room.
+        """
         centres = []
         for connector in self.members:
-            centre = centroid(connector['connector'][:-1])  # use the centroid of the connector as representative point --> find better solution!!
+            centre = centroid(connector['connector'][:-1])
+            # use the centroid of the connector as representative point --> TODO: find better solution!!
             level = connector['level']
             centres.append({'level': level, 'centre': centre})
 
@@ -21,14 +46,14 @@ class Connection:
 
         if self.type == 'stairs':
             for i in range(len(centres) - 1):
-                self.ways.append(write_python_way([centres[i]['centre'], centres[i + 1]['centre']], centres[i]['level'] + ';' + centres[i + 1]['level'], self.type))
+                self.ways.append(write_python_way([centres[i]['centre'], centres[i + 1]['centre']],
+                                                  centres[i]['level'] + ';' + centres[i + 1]['level'],
+                                                  self.type))
         else:  # elevator
-            i = 0
-            while i < len(centres) - 1:
-                j = i + 1
-                while j < len(centres):
+            for i in range(len(centres) - 1):
+                for j in range(i + 1, len(centres)):
                     self.ways.append(write_python_way([centres[i]['centre'], centres[j]['centre']],
-                                                      centres[i]['level'] + ';' + centres[j]['level'], self.type))
-                    j = j + 1
-                i = i + 1
+                                                      centres[i]['level'] + ';' + centres[j]['level'],
+                                                      self.type))
+
         return self.ways

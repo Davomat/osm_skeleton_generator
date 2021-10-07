@@ -1,18 +1,47 @@
 import copy
+
 import core.polyskel2 as polyskel
 from core.osm_helper import *
 
 
 class Room:
-    def __init__(self, polygon, level, barriers=None):
+    """
+    A class to store information about OSM rooms and corridors.
+
+    Args
+    ----
+    polygon : list[tuple[float, float]]
+        A list of points that defines the outer shell of the room's inner area.
+    level : str
+        The value of the floor on which the room is.
+    barriers : list[list[tuple[float, float]]]
+        The objects inside the room that represent obstacles like poles or bookcases.
+
+    Attributes
+    ----------
+    polygon : list[tuple[float, float]]
+        A list of points that defines the outer shell of the room's inner area.
+    level : str
+        The value of the floor on which the room is.
+    doors : list[tuple[float, float]]
+        The representations of doors as points.
+    ways : list[dict[str, Union[list[tuple[float, float]], str]]]
+        The calculated ways with their type and level information for later navigation.
+    decision_nodes : list[tuple[float, float]]
+        The points that connect more than 1 ways / 2 way segments.
+    barriers : list[list[tuple[float, float]]]
+        The objects inside the room that represent obstacles like poles or bookcases.
+    """
+
+    def __init__(self, polygon: list[tuple[float, float]], level: str,
+                 barriers: list[list[tuple[float, float]]] = None):
         self.polygon = copy.copy(polygon)
         self.level = level
         self.doors = []
         self.ways = []
         self.decision_nodes = []
-        if barriers is None:
-            self.barriers = []
-        else:
+        self.barriers = []
+        if barriers is not None:
             self.barriers = copy.deepcopy(barriers)
         simplify_room(self.polygon, self.barriers)
         if not anti_clockwise(self.polygon):
@@ -22,14 +51,21 @@ class Room:
             if anti_clockwise(barrier):  # the points of holes in the polygon must be passed in clockwise order
                 barrier.reverse()
 
-    def add_doors(self, all_doors):
+    def add_doors(self, all_doors: dict[str, list[tuple[float, float]]]):
+        """
+        Finds and adds the doors that belong to the room.
+        """
         if self.level in all_doors:
             self.doors = add_doors_to_polygon(self.polygon, all_doors[self.level])
             for i in range(len(self.barriers)):
                 doors = add_doors_to_polygon(self.barriers[i], all_doors[self.level])
                 self.doors += doors
 
-    def find_ways(self, simplify_ways, door_to_door):
+    def find_ways(self, simplify_ways: bool, door_to_door: bool) \
+            -> list[dict[str, Union[list[tuple[float, float]], str]]]:
+        """
+        Calculates the ways for navigation inside the room.
+        """
         skeleton = polyskel.skeletonize(self.polygon, self.barriers)
         for arc in skeleton:
             point1 = (arc.source.x, arc.source.y)
@@ -48,13 +84,17 @@ class Room:
 
         if door_to_door:
             self.door_to_door()
+
         return self.ways
 
     def long_ways(self):
+        """
+        Combines several short ways to fewer long ways.
+        """
         self.find_decision_nodes()
         processed_ways = []
-        i = 0
         new_ways = []
+        i = 0
         while i < len(self.ways):
             new_way = []
             change = False
@@ -72,6 +112,7 @@ class Room:
                 change = False
                 for way in self.ways:
                     if way['way'] not in processed_ways:
+
                         if way['way'][0] == new_way[0]:
                             if new_way[0] not in self.decision_nodes:
                                 way['way'].reverse()
@@ -97,12 +138,16 @@ class Room:
                                 new_way += way['way'][1:]
                                 processed_ways.append(way['way'])
                                 change = True
+
             if new_way:  # equals expression "if new_way != []:"
                 new_ways.append(write_python_way(new_way, self.level))
 
         self.ways = new_ways
 
     def find_decision_nodes(self):
+        """
+        Parses the current ways and finds all nodes that are connected to different ways.
+        """
         self.remove_duplicate_ways()
         self.decision_nodes = []
         self.decision_nodes.extend(self.doors)
@@ -118,6 +163,11 @@ class Room:
                         self.decision_nodes.append(node)
 
     def simplify_ways(self):
+        """
+        Deletes all unnecessary parts of the current ways.
+
+        Ways consisting of more than 1 segment are shortened if the result is valid.
+        """
         self.remove_duplicate_ways()
         for way in self.ways:
             i = 0
@@ -129,19 +179,21 @@ class Room:
         self.remove_duplicate_ways()
 
     def door_to_door(self):
+        """
+        Adds all possible direct ways that lead from door to door.
+        """
         new_ways = []
-        i = 0
-        while i < len(self.doors) - 1:
-            j = i + 1
-            while j < len(self.doors):
+        for i in range(len(self.doors) - 1):
+            for j in range(i + 1, len(self.doors)):
                 if way_inside_room([self.doors[i], self.doors[j]], self.polygon, self.barriers):
                     new_ways.append(write_python_way([self.doors[i], self.doors[j]], self.level))
-                j += 1
-            i += 1
         self.ways += new_ways
         self.split_intersecting_ways()
 
-    def split_intersecting_ways(self):  # if two ways intersect, four separate ways are created
+    def split_intersecting_ways(self):
+        """
+        Searches all way pairs for intersections. If two ways intersect, four separate ways are created.
+        """
         self.remove_duplicate_ways()
         i = 0
         change = True
@@ -180,15 +232,18 @@ class Room:
                     j += 1
                 i += 1
 
-    # remove ways that aren't connected to doors or other ways
     def remove_useless_ways(self):
+        """
+        Removes ways that aren't connected to doors or other ways.
+        """
         self.find_decision_nodes()
         change = True
         while change:
             i = 0
             change = False
             while i < len(self.ways):
-                if self.ways[i]['way'][0] not in self.decision_nodes and self.ways[i]['way'][-1] not in self.decision_nodes:
+                if self.ways[i]['way'][0] not in self.decision_nodes \
+                        and self.ways[i]['way'][-1] not in self.decision_nodes:
                     if self.ways[i]['way'][0] not in self.doors and self.ways[i]['way'][-1] not in self.doors:
                         del self.ways[i]
                         change = True
@@ -199,8 +254,12 @@ class Room:
                 if change:
                     self.long_ways()  # update
 
-    # necessary because otherwise some nodes might be mistaken for decision nodes
     def remove_duplicate_ways(self):
+        """
+        Deletes all ways that exist multiple times or have a length of 0.
+
+        Necessary because otherwise some nodes might be mistaken for decision nodes.
+        """
         i = 0
         while i < len(self.ways):
             if len(self.ways[i]['way']) == 2 and self.ways[i]['way'][0] == self.ways[i]['way'][1]:
@@ -214,13 +273,21 @@ class Room:
                         j += 1
                 i += 1
 
-    # find connections between every first and last node each way, exclude ways that intersect with existing ways
-    # --> workaround for bad results from straight skeleton generation
     def add_supplementary_ways(self):
+        """
+        Adds valid ways between current ways.
+
+        Finds connections between the ends of different ways and adds new ways in between.
+        New ways that intersect with existing ways are excluded.
+
+        This is a workaround for bad results from straight skeleton generation,
+        e.g. some generated ways are not connected to a door or the doors are not connected at all.
+        """
         new_ways = []
         excluded = []
         all_relevant_nodes = []
         all_relevant_nodes.extend(self.doors)
+
         for way in self.ways:
             first_node = way['way'][0]
             last_node = way['way'][-1]
@@ -231,16 +298,15 @@ class Room:
                     all_relevant_nodes.append(first_node)
                 if last_node not in all_relevant_nodes:
                     all_relevant_nodes.append(last_node)
-        i = 0
-        while i < len(all_relevant_nodes) - 1:
+
+        for i in range(len(all_relevant_nodes) - 1):
             first_node = all_relevant_nodes[i]
-            j = i + 1
-            while j < len(all_relevant_nodes):
+            for j in range(i + 1, len(all_relevant_nodes)):
                 last_node = all_relevant_nodes[j]
                 if (first_node, last_node) not in excluded:
-                    if way_inside_room([first_node, last_node], self.polygon, self.barriers) and not way_intersects_with_way([first_node, last_node], self.ways):
+                    if way_inside_room([first_node, last_node], self.polygon, self.barriers) and \
+                            not way_intersects_with_way([first_node, last_node], self.ways):
                         new_ways.append(write_python_way([first_node, last_node], self.level))
-                j += 1
-            i += 1
+
         self.ways.extend(new_ways)
         self.split_intersecting_ways()
