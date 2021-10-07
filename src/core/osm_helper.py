@@ -1,4 +1,4 @@
-from geometry import *
+from core.geometry import *
 
 
 def write_python_way(nodes, level, type='footway'):

@@ -1,6 +1,6 @@
 import copy
-import polyskel2 as polyskel
-from osm_helper import *
+import core.polyskel2 as polyskel
+from core.osm_helper import *
 
 
 class Room:
