@@ -28,6 +28,10 @@ if __name__ == '__main__':
         elif lines1[i] != lines2[i]:
             are_same = False
             print('Line ' + str(i+1) + ': \t' + 'difference found')
+            for j in range(min(len(lines1[i]), len(lines2[i]))):
+                if lines1[i][j] != lines2[i][j]:
+                    print('... first in column ' + str(j))
+                    break
 
     if are_same:
         print('Congrats, the files are similar!')
