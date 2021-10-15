@@ -24,8 +24,8 @@ def parse_door(element: Element, doors: dict[str, list[tuple[float, float]]], is
     else:
         coords = []
         for nd in element.findall("nd")[:-1]:
-            node = nd.get('ref')
-            node = (root.find("./node[@id='" + node + "']"))  # find referenced node
+            node_ref = nd.get('ref')
+            node = root.find("./node[@id='" + node_ref + "']")  # find referenced node
             coords.append((float(node.get('lat')), float(node.get('lon'))))
         door = centroid(coords)
     doors[level].append(door)
@@ -37,8 +37,8 @@ def parse_room(element: Element, root: Element) -> tuple[list[tuple[float, float
     """
     polygon = []
     for nd in element.findall("nd")[:-1]:
-        node = nd.get('ref')
-        node = (root.find("./node[@id='" + node + "']"))
+        node_ref = nd.get('ref')
+        node = (root.find("./node[@id='" + node_ref + "']"))
         x = float(node.get('lat'))
         y = float(node.get('lon'))
         polygon.append((x, y))
@@ -55,11 +55,11 @@ def parse_connection(element: Element, root: Element) \
     con_type = 'other'
     for member in element.findall("member"):
         polygon = []
-        connector = member.get('ref')
-        connector = root.find("./way[@id='" + connector + "']")
+        connector_ref = member.get('ref')
+        connector = root.find("./way[@id='" + connector_ref + "']")
         for nd in connector.findall("nd"):
-            node = nd.get('ref')
-            node = root.find("./node[@id='" + node + "']")
+            node_ref = nd.get('ref')
+            node = root.find("./node[@id='" + node_ref + "']")
             x = float(node.get('lat'))
             y = float(node.get('lon'))
             polygon.append((x, y))
@@ -81,26 +81,42 @@ def parse_multipolygon(element: Element, root: Element) \
     """
     polygon = []
     barriers = []
+    # element is a Element 'relation' with attributes like {'id': '-57497', 'action': 'modify'}
     outer_ref = element.find("member[@role='outer']")
+    # outer_ref is a Element 'member' with attributes like {'type': 'way', 'ref': '-56945', 'role': 'outer'}
     outer = root.find("./way[@id='" + outer_ref.get('ref') + "']")
-    level = outer.find("tag[@k='level']").get('v')
-    building_element = outer.find("tag[@k='indoor']").get('v')
+    # outer is a Element 'way' with attributes like {'id': '-56945', 'action': 'modify'}
+
+    if element.find("tag[@k='level']") is not None:
+        level = element.find("tag[@k='level']").get('v')
+    elif outer.find("tag[@k='level']") is not None:
+        level = outer.find("tag[@k='level']").get('v')
+    else:
+        raise ValueError('No level tag found in Multipolygon {} with Attributes {}'.format(element, element.attrib))
+
+    if element.find("tag[@k='indoor']") is not None:
+        building_element = element.find("tag[@k='indoor']").get('v')
+    elif outer.find("tag[@k='indoor']") is not None:
+        building_element = outer.find("tag[@k='indoor']").get('v')
+    else:
+        raise ValueError('No indoor tag found in Multipolygon {} with Attributes {}'.format(element, element.attrib))
+
     if building_element == 'room' or building_element == 'corridor':
         for member in element.findall("member[@role='inner']"):
             barrier = []
-            inner = member.get('ref')
-            inner = root.find("./way[@id='" + inner + "']")
+            inner_ref = member.get('ref')
+            inner = root.find("./way[@id='" + inner_ref + "']")
             for nd in inner.findall("nd")[:-1]:
-                node = nd.get('ref')
-                node = root.find("./node[@id='" + node + "']")
+                node_ref = nd.get('ref')
+                node = root.find("./node[@id='" + node_ref + "']")
                 x = float(node.get('lat'))
                 y = float(node.get('lon'))
                 barrier.append((x, y))
             barriers.append(barrier)
 
         for nd in outer.findall("nd")[:-1]:
-            node = nd.get('ref')
-            node = root.find("./node[@id='" + node + "']")
+            node_ref = nd.get('ref')
+            node = root.find("./node[@id='" + node_ref + "']")
             x = float(node.get('lat'))
             y = float(node.get('lon'))
             polygon.append((x, y))
