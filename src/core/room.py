@@ -1,7 +1,9 @@
 import copy
+from typing import Union
 
 import core.polyskel2 as polyskel
-from core.osm_helper import *
+from core.geometry import *
+from core.osm_helper import write_python_way
 
 
 class Room:
@@ -31,6 +33,13 @@ class Room:
         The points that connect more than 1 ways / 2 way segments.
     barriers : list[list[tuple[float, float]]]
         The objects inside the room that represent obstacles like poles or bookcases.
+
+    Methods
+    -------
+    add_doors(all_doors: dict[str, list[tuple[float, float]]]) :
+        Finds and adds the doors that belong to the room.
+    find_ways(self, simplify_ways: bool, door_to_door: bool) : list[dict[str, Union[list[tuple[float, float]], str]]]
+        Calculates the ways for navigation inside the room.
     """
 
     def __init__(self, polygon: list[tuple[float, float]], level: str,
@@ -74,24 +83,24 @@ class Room:
                 if way_is_valid(point1, point2, self.polygon, self.doors, self.barriers):
                     self.ways.append(write_python_way([point1, point2], self.level))
 
-        self.long_ways()
-        self.remove_useless_ways()
+        self._long_ways()
+        self._remove_useless_ways()
 
         if simplify_ways:
-            self.simplify_ways()
+            self._simplify_ways()
 
-        self.add_supplementary_ways()
+        self._add_supplementary_ways()
 
         if door_to_door:
-            self.door_to_door()
+            self._door_to_door()
 
         return self.ways
 
-    def long_ways(self):
+    def _long_ways(self):
         """
-        Combines several short ways to fewer long ways.
+        A helper method that combines several short ways to fewer long ways.
         """
-        self.find_decision_nodes()
+        self._find_decision_nodes()
         processed_ways = []
         new_ways = []
         i = 0
@@ -144,11 +153,11 @@ class Room:
 
         self.ways = new_ways
 
-    def find_decision_nodes(self):
+    def _find_decision_nodes(self):
         """
-        Parses the current ways and finds all nodes that are connected to different ways.
+        A helper method that parses the current ways and finds all nodes that are connected to different ways.
         """
-        self.remove_duplicate_ways()
+        self._remove_duplicate_ways()
         self.decision_nodes = []
         self.decision_nodes.extend(self.doors)
         for way in self.ways:
@@ -162,13 +171,13 @@ class Room:
                     if count > 2:
                         self.decision_nodes.append(node)
 
-    def simplify_ways(self):
+    def _simplify_ways(self):
         """
-        Deletes all unnecessary parts of the current ways.
+        A helper method that deletes all unnecessary parts of the current ways.
 
         Ways consisting of more than 1 segment are shortened if the result is valid.
         """
-        self.remove_duplicate_ways()
+        self._remove_duplicate_ways()
         for way in self.ways:
             i = 0
             while i < len(way['way']) - 2:
@@ -176,11 +185,11 @@ class Room:
                     del way['way'][i + 1]
                 else:
                     i += 1
-        self.remove_duplicate_ways()
+        self._remove_duplicate_ways()
 
-    def door_to_door(self):
+    def _door_to_door(self):
         """
-        Adds all possible direct ways that lead from door to door.
+        A helper method that adds all possible direct ways that lead from door to door.
         """
         new_ways = []
         for i in range(len(self.doors) - 1):
@@ -188,13 +197,14 @@ class Room:
                 if way_inside_room([self.doors[i], self.doors[j]], self.polygon, self.barriers):
                     new_ways.append(write_python_way([self.doors[i], self.doors[j]], self.level))
         self.ways += new_ways
-        self.split_intersecting_ways()
+        self._split_intersecting_ways()
 
-    def split_intersecting_ways(self):
+    def _split_intersecting_ways(self):
         """
-        Searches all way pairs for intersections. If two ways intersect, four separate ways are created.
+        A helper method that searches all way pairs for intersections.
+        If two ways intersect, four separate ways are created.
         """
-        self.remove_duplicate_ways()
+        self._remove_duplicate_ways()
         i = 0
         change = True
         while change:
@@ -213,15 +223,13 @@ class Room:
                             way2_point2 = self.ways[j]['way'][node_index_way2 + 1]
                             m_way2, b_way2 = get_line(way2_point1, way2_point2)
                             intersection_point = intersection(m_way1, m_way2, b_way1, b_way2)
-                            if intersection_point is not None and in_interval(way1_point1, way1_point2,
-                                                                              intersection_point) is True and in_interval(
-                                    way2_point1, way2_point2, intersection_point) is True:
-                                self.ways.append(
-                                    write_python_way([intersection_point] + self.ways[i]['way'][node_index_way1 + 1:],
-                                                     self.level))
-                                self.ways.append(
-                                    write_python_way([intersection_point] + self.ways[j]['way'][node_index_way2 + 1:],
-                                                     self.level))
+                            if intersection_point is not None \
+                                    and in_interval(way1_point1, way1_point2, intersection_point) \
+                                    and in_interval(way2_point1, way2_point2, intersection_point):
+                                self.ways.append(write_python_way(
+                                        [intersection_point] + self.ways[i]['way'][node_index_way1 + 1:], self.level))
+                                self.ways.append(write_python_way(
+                                        [intersection_point] + self.ways[j]['way'][node_index_way2 + 1:], self.level))
                                 self.ways[i]['way'] = self.ways[i]['way'][:node_index_way1 + 1] + [intersection_point]
                                 self.ways[j]['way'] = self.ways[j]['way'][:node_index_way2 + 1] + [intersection_point]
                                 way1_point2 = intersection_point
@@ -232,11 +240,11 @@ class Room:
                     j += 1
                 i += 1
 
-    def remove_useless_ways(self):
+    def _remove_useless_ways(self):
         """
-        Removes ways that aren't connected to doors or other ways.
+        A helper method that removes ways that aren't connected to doors or other ways.
         """
-        self.find_decision_nodes()
+        self._find_decision_nodes()
         change = True
         while change:
             i = 0
@@ -252,11 +260,11 @@ class Room:
                 else:
                     i += 1
                 if change:
-                    self.long_ways()  # update
+                    self._long_ways()  # update
 
-    def remove_duplicate_ways(self):
+    def _remove_duplicate_ways(self):
         """
-        Deletes all ways that exist multiple times or have a length of 0.
+        A helper method that deletes all ways that exist multiple times or have a length of 0.
 
         Necessary because otherwise some nodes might be mistaken for decision nodes.
         """
@@ -273,9 +281,9 @@ class Room:
                         j += 1
                 i += 1
 
-    def add_supplementary_ways(self):
+    def _add_supplementary_ways(self):
         """
-        Adds valid ways between current ways.
+        A helper method that adds valid ways between current ways.
 
         Finds connections between the ends of different ways and adds new ways in between.
         New ways that intersect with existing ways are excluded.
@@ -309,4 +317,4 @@ class Room:
                         new_ways.append(write_python_way([first_node, last_node], self.level))
 
         self.ways.extend(new_ways)
-        self.split_intersecting_ways()
+        self._split_intersecting_ways()

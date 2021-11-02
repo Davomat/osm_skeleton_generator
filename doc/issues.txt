@@ -1,0 +1,11 @@
+
+Der Parser ist anhand der Beispieldatei data/nhg.osm erstellt worden. Diese hat folgende Besonderheiten:
+
+- keine Nodes sind zusammengefasst (merged),
+- die Begrenzungen eines Raums überlappen mit Wänden u.a.
+- die Wände sind oft mit im Raum bzw. ragen in Räume rein (erzeugte Wege führen deshalb auch durch Wände)
+
+- Hindernisse in Räumen werden als innere Teile von Multipolygonen aufgenommen. Der Parser erkennt sie nicht automatisch.
+- Multipolygone sind nur da, um Hindernisse darzustellen. Die äußere Referenz ist der eigentliche Raum mit Tags.
+- Multipolygone stellen also nicht tatsächliche umschließende Gebiete/Räume dar
+
