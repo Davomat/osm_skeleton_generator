@@ -4,6 +4,7 @@ from typing import Union
 import core.polyskel2 as polyskel
 from core.geometry import *
 from core.osm_helper import write_python_way
+import core.tolerances as tolerances
 
 
 class Room:
@@ -16,7 +17,7 @@ class Room:
         A list of points that defines the outer shell of the room's inner area.
     level : str
         The value of the floor on which the room is.
-    barriers : list[list[tuple[float, float]]]
+    inner_barriers : list[list[tuple[float, float]]]
         The objects inside the room that represent obstacles like poles or bookcases.
 
     Attributes
@@ -31,7 +32,7 @@ class Room:
         The calculated ways with their type and level information for later navigation.
     decision_nodes : list[tuple[float, float]]
         The points that connect more than 1 ways / 2 way segments.
-    barriers : list[list[tuple[float, float]]]
+    inner_barriers : list[list[tuple[float, float]]]
         The objects inside the room that represent obstacles like poles or bookcases.
 
     Methods
@@ -43,31 +44,45 @@ class Room:
     """
 
     def __init__(self, polygon: list[tuple[float, float]], level: str,
-                 barriers: list[list[tuple[float, float]]] = None):
-        self.polygon = copy.copy(polygon)
-        self.level = level
+                 potential_barriers: list[tuple[list[tuple[float, float]], str]] = None,
+                 inner_barriers: list[list[tuple[float, float]]] = None):
+        self.polygon: list[tuple[float, float]] = copy.copy(polygon)
+        self.level: str = level
         self.doors = []
         self.ways = []
         self.decision_nodes = []
-        self.barriers = []
-        if barriers is not None:
-            self.barriers = copy.deepcopy(barriers)
+        self.barriers: list[list[tuple[float, float]]] = copy.deepcopy(inner_barriers) or []
         simplify_room(self.polygon, self.barriers)
         if not anti_clockwise(self.polygon):
             self.polygon.reverse()
 
+        self._add_potential_barriers(potential_barriers or [])
         for barrier in self.barriers:
             if anti_clockwise(barrier):  # the points of holes in the polygon must be passed in clockwise order
                 barrier.reverse()
+
+    def __repr__(self):
+        return repr(self.polygon) + repr(self.level) + repr(self.barriers)
+
+    def _add_potential_barriers(self, potential_barriers: list[tuple[list[tuple[float, float]], str]]):
+        """
+        A helper method that finds and adds barriers inside the room.
+        """
+        for potential_barrier in potential_barriers:
+            if self.level == potential_barrier[1]:
+                if polygon_inside_polygon(potential_barrier[0], self.polygon, tolerance=tolerances.barrier_to_room):
+                    self.barriers.append(potential_barrier[0])
 
     def add_doors(self, all_doors: dict[str, list[tuple[float, float]]]):
         """
         Finds and adds the doors that belong to the room.
         """
         if self.level in all_doors:
-            self.doors = add_doors_to_polygon(self.polygon, all_doors[self.level])
-            for i in range(len(self.barriers)):
-                doors = add_doors_to_polygon(self.barriers[i], all_doors[self.level])
+            # check the outer polygon of the room
+            self.doors += add_doors_to_polygon(self.polygon, all_doors[self.level])
+            for barrier in self.barriers:
+                # check for inner rooms
+                doors = add_doors_to_polygon(barrier, all_doors[self.level])
                 self.doors += doors
 
     def find_ways(self, simplify_ways: bool, door_to_door: bool) \
@@ -83,7 +98,7 @@ class Room:
                 if way_is_valid(point1, point2, self.polygon, self.doors, self.barriers):
                     self.ways.append(write_python_way([point1, point2], self.level))
 
-        self._long_ways()
+        self._enlarge_ways()
         self._remove_useless_ways()
 
         if simplify_ways:
@@ -96,7 +111,7 @@ class Room:
 
         return self.ways
 
-    def _long_ways(self):
+    def _enlarge_ways(self):
         """
         A helper method that combines several short ways to fewer long ways.
         """
@@ -260,7 +275,7 @@ class Room:
                 else:
                     i += 1
                 if change:
-                    self._long_ways()  # update
+                    self._enlarge_ways()  # update
 
     def _remove_duplicate_ways(self):
         """

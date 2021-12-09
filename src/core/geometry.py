@@ -1,12 +1,12 @@
 import math
 from typing import Union
 
+import core.tolerances as tolerances
+
 
 def centroid(points: list[tuple[float, float]]) -> tuple[float, float]:
     """
     Finds the centroid of a polygon.
-
-    TODO: maybe replace with more accurate function
     """
     x, y = zip(*points)
     return sum(x) / len(x), sum(y) / (len(y))
@@ -14,7 +14,7 @@ def centroid(points: list[tuple[float, float]]) -> tuple[float, float]:
 
 def in_interval(point1: tuple[float, float], point2: tuple[float, float], point3: tuple[float, float]) -> bool:
     """
-    Checks whether point3 is between point1 and point2.
+    Checks whether point3 is between point_a and point_b.
     Should only be used for collinear points.
     """
     x1 = point1[0]
@@ -117,7 +117,8 @@ def anti_clockwise(polygon: list[tuple[float, float]]) -> bool:
     return result < 0
 
 
-def point_inside_polygon(point: tuple[float, float], polygon: list[tuple[float, float]]) -> bool:
+def point_inside_polygon(point: tuple[float, float], polygon: list[tuple[float, float]],
+                         tolerance: float = tolerances.general_sloppy_mapping) -> bool:
     """
     Checks if a point is inside a polygon (list of points).
 
@@ -126,40 +127,42 @@ def point_inside_polygon(point: tuple[float, float], polygon: list[tuple[float, 
     if point in polygon:
         return False
     count = 0
-    for polygon_point1, polygon_point2 in zip(polygon, polygon[1:] + polygon[:1]):
-        if point_is_on_edge(point, [polygon_point1, polygon_point2]):
+    for polygon_point_a, polygon_point_b in zip(polygon, polygon[1:] + polygon[:1]):
+        if point_is_on_edge(point, (polygon_point_a, polygon_point_b), tolerance):
             return False
-        if polygon_point1[0] >= point[0] or polygon_point2[0] >= point[0]:
-            if almost_same(point[1], polygon_point1[1]):
-                if polygon_point1[1] < polygon_point2[1]:
+        if polygon_point_a[0] >= point[0] or polygon_point_b[0] >= point[0]:
+            if almost_same(point[1], polygon_point_a[1]):
+                if polygon_point_a[1] < polygon_point_b[1]:
                     count += 1
-            if almost_same(point[1], polygon_point2[1]):
-                if polygon_point1[1] > polygon_point2[1]:
+            if almost_same(point[1], polygon_point_b[1]):
+                if polygon_point_a[1] > polygon_point_b[1]:
                     count += 1
             else:
-                m, b = get_line(polygon_point1, polygon_point2)
+                m, n = get_line(polygon_point_a, polygon_point_b)
                 # intersection with a horizontal line through the point
-                intersection_point = intersection(m, 0, b, point[1])
+                intersection_point = intersection(m, 0, n, point[1])
                 if intersection_point:
                     if intersection_point[0] > point[0]:
-                        if in_interval(polygon_point1, polygon_point2, intersection_point):
+                        if in_interval(polygon_point_a, polygon_point_b, intersection_point):
                             count = count + 1
 
-    if count % 2 == 1:
-        return True
-    return False
+    return count % 2 == 1
 
 
-def point_is_on_edge(point: tuple[float, float], edge: list[tuple[float, float]]) -> bool:
+def point_is_on_edge(point: tuple[float, float],
+                     edge: tuple[tuple[float, float], tuple[float, float]],
+                     tolerance: float = tolerances.general_sloppy_mapping) -> bool:
     """
-    Checks whether a point is on an edge.
+    Checks whether a point is on an edge (on the connection line between the two edge points).
     """
     if almost_same_point(point, edge[0]) or almost_same_point(point, edge[1]):
         return True
     m, b = get_line(edge[0], edge[1])
     m_orthogonal, b_orthogonal = get_orthogonal_line(m, point)
     intersection_point = intersection(m, m_orthogonal, b, b_orthogonal)
-    if almost_same_point(point, intersection_point):
+    if almost_same_point(point, intersection_point, tolerance) \
+            and min(edge[0][0], edge[1][0]) <= intersection_point[0] <= max(edge[0][0], edge[1][0]) \
+            and min(edge[0][1], edge[1][1]) <= intersection_point[1] <= max(edge[0][1], edge[1][1]):
         return True
     return False
 
@@ -177,20 +180,21 @@ def point_inside_room(point: tuple[float, float], polygon: list[tuple[float, flo
     return point_inside_polygon(point, polygon)
 
 
-def almost_same_point(point1: tuple[float, float], point2: tuple[float, float]) -> bool:
+def almost_same_point(point_a: tuple[float, float], point_b: tuple[float, float],
+                      tolerance: float = tolerances.general_sloppy_mapping) -> bool:
     """
     Checks whether 2 points have almost the same coordinates
     """
-    if point1 is None or point2 is None:
+    if point_a is None or point_b is None:
         return False
-    return almost_same(point1[0], point2[0]) and almost_same(point1[1], point2[1])
+    return almost_same(point_a[0], point_b[0], tolerance) and almost_same(point_a[1], point_b[1], tolerance)
 
 
-def almost_same(value1: float, value2: float) -> bool:
+def almost_same(value1: float, value2: float, tolerance: float = tolerances.general_sloppy_mapping) -> bool:
     """
     Checks whether 2 values are in the same range within a specific tolerance.
     """
-    return math.isclose(value1, value2, abs_tol=0.00000001)
+    return math.isclose(value1, value2, abs_tol=tolerance)
 
 
 def polygon_intersection(way: list[tuple[float, float]], polygon: list[tuple[float, float]]) -> bool:
@@ -226,6 +230,18 @@ def way_inside_room(way: list[tuple[float, float]], polygon: list[tuple[float, f
         if polygon_intersection(way, barrier):
             return False
     return not polygon_intersection(way, polygon)
+
+
+def polygon_inside_polygon(potential_inner_polygon: list[tuple[float, float]],
+                           potential_outer_polygon: list[tuple[float, float]],
+                           tolerance: float = tolerances.general_sloppy_mapping) -> bool:
+    """
+    Checks whether all points of a potential inner polygon are inside another potential outer polygon.
+    """
+    for point in potential_inner_polygon:
+        if not point_inside_polygon(point, potential_outer_polygon, tolerance):
+            return False
+    return True
 
 
 def get_orthogonal_line(m: Union[float, None], point: tuple[float, float]) -> Union[tuple[float, float],
@@ -269,7 +285,7 @@ def add_doors_to_polygon(polygon: list[tuple[float, float]], all_doors: list[tup
                         m2, b2 = get_orthogonal_line(m, door)
                         intersection_point = intersection(m, m2, b, b2)
                         point_distance = distance(intersection_point, door)
-                        if (point_distance < 0.3 and
+                        if (point_distance < tolerances.door_to_room and
                             in_interval(polygon[index_prev], polygon[index], intersection_point)) \
                                 or almost_same_point(intersection_point, polygon[index] or
                                                      almost_same_point(intersection_point, polygon[index_prev])):
@@ -313,7 +329,7 @@ def simplify_polygon(polygon: list[tuple[float, float]]):
         point = polygon[index]
         point_prev = polygon[index_prev]
         point_next = polygon[index_next]
-        if point_is_on_edge(point, [point_prev, point_next]):
+        if point_is_on_edge(point, (point_prev, point_next)):
             del polygon[index]
             if index == 0:
                 index_prev -= 1

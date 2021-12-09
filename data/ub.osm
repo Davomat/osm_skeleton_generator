@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<osm version='0.6' generator='JOSM'>
-  <bounds minlat="50.8381000" minlon="12.9230000" maxlat="50.8451000" maxlon="12.9310000"/>
+<osm version='0.6' upload='false' generator='JOSM'>
+  <bounds minlat='50.8381000' minlon='12.9230000' maxlat='50.8451000' maxlon='12.9310000' />
   <node id='104099' visible='true' version='1' changeset='123456789' timestamp='2021-06-23T07:16:19Z' user='JohnDoe' uid='12345678' lat='50.84176020006' lon='12.92692686547' />
   <node id='104100' visible='true' version='1' changeset='123456789' timestamp='2021-06-23T07:16:19Z' user='JohnDoe' uid='12345678' lat='50.84168520308' lon='12.92725317801' />
   <node id='104101' visible='true' version='1' changeset='123456789' timestamp='2021-06-23T07:16:19Z' user='JohnDoe' uid='12345678' lat='50.84184208706' lon='12.92734360295' />
