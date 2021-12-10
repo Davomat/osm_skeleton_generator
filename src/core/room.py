@@ -52,8 +52,8 @@ class Room:
         self.ways = []
         self.decision_nodes = []
         self.barriers: list[list[tuple[float, float]]] = copy.deepcopy(inner_barriers) or []
-        self._add_potential_barriers(potential_barriers or [])
         self._simplify()
+        self._add_potential_barriers(potential_barriers or [])
         self._order_polygons()
 
     def __repr__(self):
@@ -62,11 +62,27 @@ class Room:
     def _add_potential_barriers(self, potential_barriers: list[tuple[list[tuple[float, float]], str]]):
         """
         A helper method that finds and adds barriers inside the room.
+        The barriers must also not be inside predefined inner barriers (other rooms).
         """
+        additional_barriers = []
         for potential_barrier in potential_barriers:
-            if self.level == potential_barrier[1]:
-                if polygon_inside_polygon(potential_barrier[0], self.polygon, tolerance=tolerances.barrier_to_room):
-                    self.barriers.append(potential_barrier[0])
+            # check for correct level
+            if self.level != potential_barrier[1]:
+                continue
+            # check for being inside the room polygon
+            if not polygon_inside_polygon(potential_barrier[0], self.polygon, tolerance=tolerances.barrier_to_room):
+                continue
+            # check for being not inside an already assigned barrier (room inside the self room)
+            is_ok = True
+            for inner_barrier in self.barriers:
+                if polygon_inside_polygon(potential_barrier[0], inner_barrier, use_centroids=True):
+                    is_ok = False
+                    break
+            if not is_ok:
+                continue
+            # now the potential_barrier is inside the room and not inside another room
+            additional_barriers.append(potential_barrier[0])
+        self.barriers.extend(additional_barriers)
 
     def _simplify(self):
         """

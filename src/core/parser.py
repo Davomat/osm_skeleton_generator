@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET  # TODO: replace with better Lib, ET doesn't 
 from typing import Union
 
 from core.connection import Connection
-from core.geometry import centroid
+from core.geometry import centroid, simplify_polygon
 from core.osm_helper import beautify_xml
 from core.room import Room
 
@@ -82,6 +82,9 @@ class Parser:
                 if element.find(tag) is not None:
                     self.potential_barriers.append(self._parse_polygon(element))
                     break
+
+        for polygon in self.potential_barriers:
+            simplify_polygon(polygon[0])
 
         # parse ways to find rooms
         for element in self.root.findall("./way[tag]"):

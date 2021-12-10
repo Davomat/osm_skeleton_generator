@@ -234,13 +234,26 @@ def way_inside_room(way: list[tuple[float, float]], polygon: list[tuple[float, f
 
 def polygon_inside_polygon(potential_inner_polygon: list[tuple[float, float]],
                            potential_outer_polygon: list[tuple[float, float]],
-                           tolerance: float = tolerances.general_sloppy_mapping) -> bool:
+                           tolerance: float = tolerances.general_sloppy_mapping,
+                           use_centroids: bool = False) -> bool:
     """
-    Checks whether all points of a potential inner polygon are inside another potential outer polygon.
+    Checks whether all points of a potential inner polygon are inside or on the edge of a potential outer polygon.
+
+    If the check should be complete, checks whether the centroids of every three adjacent points of the barrier are
+    inside the potential outer polygon.
     """
-    for point in potential_inner_polygon:
-        if not point_inside_polygon(point, potential_outer_polygon, tolerance):
-            return False
+    if use_centroids:
+        points = potential_inner_polygon[:] + potential_inner_polygon[:2]
+        centroids = [centroid(points[i:i+3]) for i in range(len(potential_inner_polygon))]
+        centroids_inside = 0
+        for c in centroids:
+            if point_inside_polygon(c, potential_outer_polygon, tolerance):
+                centroids_inside += 1
+        return centroids_inside / len(centroids) >= 1 - tolerances.ratio_barrier_in_barrier
+    else:
+        for point in potential_inner_polygon:
+            if not point_inside_polygon(point, potential_outer_polygon, tolerance):
+                return False
     return True
 
 
