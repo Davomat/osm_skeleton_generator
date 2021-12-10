@@ -91,6 +91,17 @@ class Parser:
                     self.rooms.append(Room(polygon, level, self.potential_barriers))
                     break
 
+        # parse relations to find multipolygons
+        for element in self.root.findall("./relation"):
+            for tag in Parser.tags['multipolygons']:
+                if element.find(tag) is not None:
+                    polygon, level, barriers = self._parse_multipolygon(element)
+                    if polygon is not None:
+                        self.rooms.append(Room(polygon, level, self.potential_barriers, inner_barriers=barriers))
+                    break
+
+        self._remove_duplicated_rooms()
+
         # parse relations to find connections between different levels
         for element in self.root.findall("./relation"):
             for tag in Parser.tags['connections']:
@@ -98,16 +109,6 @@ class Parser:
                     members, con_type = self._parse_connection(element)
                     self.connections.append(Connection(members, con_type))
                     break
-
-        # parse relations to find multipolygons
-        # for element in self.root.findall("./relation"):
-        #     for tag in Parser.tags['multipolygons']:
-        #         if element.find(tag) is not None:
-        #             polygon, level, barriers = self._parse_multipolygon(element)
-        #             if polygon is not None:
-        #                 self.rooms.append(Room(polygon, level, self.potential_barriers, inner_barriers=barriers))
-
-        self._remove_duplicated_rooms()
 
     def _parse_door(self, element: ET.Element, is_node=True):
         """

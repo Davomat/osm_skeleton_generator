@@ -339,15 +339,6 @@ def simplify_polygon(polygon: list[tuple[float, float]]):
             index_next += 1
 
 
-def simplify_room(polygon: list[tuple[float, float]], barriers: list[list[tuple[float, float]]]):
-    """
-    Removes every point that lies on the edge between two other points.
-    """
-    simplify_polygon(polygon)
-    for barrier in barriers:
-        simplify_polygon(barrier)
-
-
 def way_intersects_with_way(way: list[tuple[float, float]],
                             ways: list[dict[str, Union[list[tuple[float, float]], str]]]) -> bool:
     """

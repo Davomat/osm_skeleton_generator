@@ -52,14 +52,9 @@ class Room:
         self.ways = []
         self.decision_nodes = []
         self.barriers: list[list[tuple[float, float]]] = copy.deepcopy(inner_barriers) or []
-        simplify_room(self.polygon, self.barriers)
-        if not anti_clockwise(self.polygon):
-            self.polygon.reverse()
-
         self._add_potential_barriers(potential_barriers or [])
-        for barrier in self.barriers:
-            if anti_clockwise(barrier):  # the points of holes in the polygon must be passed in clockwise order
-                barrier.reverse()
+        self._simplify()
+        self._order_polygons()
 
     def __repr__(self):
         return repr(self.polygon) + repr(self.level) + repr(self.barriers)
@@ -72,6 +67,26 @@ class Room:
             if self.level == potential_barrier[1]:
                 if polygon_inside_polygon(potential_barrier[0], self.polygon, tolerance=tolerances.barrier_to_room):
                     self.barriers.append(potential_barrier[0])
+
+    def _simplify(self):
+        """
+        Removes every point that lies on the edge between two other points.
+        """
+        simplify_polygon(self.polygon)
+        for barrier in self.barriers:
+            simplify_polygon(barrier)
+
+    def _order_polygons(self):
+        """
+        Ensures that the room polygon is in anticlockwise and the barriers in clockwise order.
+        """
+        # the points of the outer polygon must be in anticlockwise order
+        if not anti_clockwise(self.polygon):
+            self.polygon.reverse()
+        # the points of holes in the polygon must be in clockwise order
+        for barrier in self.barriers:
+            if anti_clockwise(barrier):
+                barrier.reverse()
 
     def add_doors(self, all_doors: dict[str, list[tuple[float, float]]]):
         """
