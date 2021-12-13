@@ -118,7 +118,7 @@ def anti_clockwise(polygon: list[tuple[float, float]]) -> bool:
 
 
 def point_inside_polygon(point: tuple[float, float], polygon: list[tuple[float, float]],
-                         tolerance: float = tolerances.general_sloppy_mapping) -> bool:
+                         tolerance: float = tolerances.general_mapping_uncertainty) -> bool:
     """
     Checks if a point is inside a polygon (list of points).
 
@@ -151,7 +151,7 @@ def point_inside_polygon(point: tuple[float, float], polygon: list[tuple[float, 
 
 def point_is_on_edge(point: tuple[float, float],
                      edge: tuple[tuple[float, float], tuple[float, float]],
-                     tolerance: float = tolerances.general_sloppy_mapping) -> bool:
+                     tolerance: float = tolerances.general_mapping_uncertainty) -> bool:
     """
     Checks whether a point is on an edge (on the connection line between the two edge points).
     """
@@ -181,7 +181,7 @@ def point_inside_room(point: tuple[float, float], polygon: list[tuple[float, flo
 
 
 def almost_same_point(point_a: tuple[float, float], point_b: tuple[float, float],
-                      tolerance: float = tolerances.general_sloppy_mapping) -> bool:
+                      tolerance: float = tolerances.general_mapping_uncertainty) -> bool:
     """
     Checks whether 2 points have almost the same coordinates
     """
@@ -190,7 +190,7 @@ def almost_same_point(point_a: tuple[float, float], point_b: tuple[float, float]
     return almost_same(point_a[0], point_b[0], tolerance) and almost_same(point_a[1], point_b[1], tolerance)
 
 
-def almost_same(value1: float, value2: float, tolerance: float = tolerances.general_sloppy_mapping) -> bool:
+def almost_same(value1: float, value2: float, tolerance: float = tolerances.general_mapping_uncertainty) -> bool:
     """
     Checks whether 2 values are in the same range within a specific tolerance.
     """
@@ -234,7 +234,7 @@ def way_inside_room(way: list[tuple[float, float]], polygon: list[tuple[float, f
 
 def polygon_inside_polygon(potential_inner_polygon: list[tuple[float, float]],
                            potential_outer_polygon: list[tuple[float, float]],
-                           tolerance: float = tolerances.general_sloppy_mapping,
+                           tolerance: float = tolerances.general_mapping_uncertainty,
                            use_centroids: bool = False) -> bool:
     """
     Checks whether all points of a potential inner polygon are inside or on the edge of a potential outer polygon.

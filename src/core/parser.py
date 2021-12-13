@@ -238,7 +238,7 @@ class Parser:
                 n2 -= 1
             n1 -= 1
 
-    def find_ways(self, simplify_ways: bool, door_to_door: bool):
+    def find_ways(self, simplify_ways_much: bool, door_to_door: bool):
         """
         Calculates the ways for later navigation.
         """
@@ -247,7 +247,7 @@ class Parser:
             i += 1
             print("room #", i, '/', len(self.rooms), end=' ', flush=True)
             room.add_doors(self.doors)
-            self.ways += room.find_ways(simplify_ways, door_to_door)
+            self.ways += room.find_ways(simplify_ways_much, door_to_door)
             print("completed.")
 
         for connection in self.connections:

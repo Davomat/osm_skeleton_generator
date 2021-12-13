@@ -48,8 +48,8 @@ class Room:
                  inner_barriers: list[list[tuple[float, float]]] = None):
         self.polygon: list[tuple[float, float]] = copy.copy(polygon)
         self.level: str = level
-        self.doors = []
-        self.ways = []
+        self.doors: list[tuple[float, float]] = []
+        self.ways: list[dict[str, Union[list[tuple[float, float]], str]]] = []
         self.decision_nodes = []
         self.barriers: list[list[tuple[float, float]]] = copy.deepcopy(inner_barriers) or []
         self._simplify()
@@ -116,7 +116,7 @@ class Room:
                 doors = add_doors_to_polygon(barrier, all_doors[self.level])
                 self.doors += doors
 
-    def find_ways(self, simplify_ways: bool, door_to_door: bool) \
+    def find_ways(self, simplify_ways_much: bool, door_to_door: bool) \
             -> list[dict[str, Union[list[tuple[float, float]], str]]]:
         """
         Calculates the ways for navigation inside the room.
@@ -132,8 +132,7 @@ class Room:
         self._enlarge_ways()
         self._remove_useless_ways()
 
-        if simplify_ways:
-            self._simplify_ways()
+        self._simplify_ways(simplify_ways_much)
 
         self._add_supplementary_ways()
 
@@ -217,20 +216,36 @@ class Room:
                     if count > 2:
                         self.decision_nodes.append(node)
 
-    def _simplify_ways(self):
+    def _simplify_ways(self, simplify_much: bool):
         """
-        A helper method that deletes all unnecessary parts of the current ways.
+        A helper method that deletes all unnecessary points of the current ways by combining points that are very close.
+        Shortens ways at first from the end to the middle for a most beautiful result.
 
-        Ways consisting of more than 1 segment are shortened if the result is valid.
+        If flag is set, ways consisting of more than 1 segment are shortened if the result is valid.
         """
-        self._remove_duplicate_ways()
         for way in self.ways:
+            i_middle = len(way['way']) // 2
+            # shorten second half of the way from the end
+            i = len(way['way']) - 1
+            while i > i_middle:
+                if almost_same_point(way['way'][i], way['way'][i-1], tolerance=tolerances.point_to_point):
+                    del way['way'][i-1]
+                i -= 1
+            # shorten first half of the ways from the beginning
             i = 0
-            while i < len(way['way']) - 2:
-                if way_inside_room([way['way'][i], way['way'][i + 2]], self.polygon, self.barriers):
-                    del way['way'][i + 1]
+            while i < i_middle and i < len(way['way']) - 1:
+                if almost_same_point(way['way'][i], way['way'][i+1], tolerance=tolerances.point_to_point):
+                    del way['way'][i+1]
                 else:
                     i += 1
+            # simplify way much if flag is set
+            i = 0
+            while i < len(way['way']) - 2:
+                if simplify_much and way_inside_room([way['way'][i], way['way'][i+2]], self.polygon, self.barriers):
+                    del way['way'][i+1]
+                else:
+                    i += 1
+
         self._remove_duplicate_ways()
 
     def _door_to_door(self):
