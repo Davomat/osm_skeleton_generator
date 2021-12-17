@@ -136,6 +136,9 @@ class Room:
 
         self._add_supplementary_ways()
 
+        self._reduce_clusters()
+        self._remove_useless_ways()
+
         if door_to_door:
             self._door_to_door()
 
@@ -379,3 +382,76 @@ class Room:
 
         self.ways.extend(new_ways)
         self._split_intersecting_ways()
+
+    def _reduce_clusters(self):
+        """
+        A helper method that finds point clusters and reduces them into a single point.
+        """
+        # find all points
+        unassigned_points: list[tuple[float, float]] = []
+        for way_dict in self.ways:
+            way = way_dict['way']
+            for point in way:
+                if point not in unassigned_points:
+                    unassigned_points.append(point)
+
+        # find the clusters with their points
+        clusters: list[list[tuple[float, float]]] = []  # a list of point lists
+        while unassigned_points:
+            current_point = unassigned_points.pop(0)
+            # check if point has close points
+            cluster = self._get_cluster_points(current_point, unassigned_points)
+            # if yes, add to a new clusters entry and check close points for the same cluster entry
+            if cluster:
+                cluster.append(current_point)
+                clusters.append(cluster)
+
+        # get the centroids of the corresponding cluster; the centroid of clusters[k] is centroids[k]
+        centroids: list[tuple[float, float]] = []
+        for cluster in clusters:
+            centroids.append(centroid(cluster))
+
+        # overwrite cluster points in ways
+        for way_dict in self.ways:
+            way = way_dict['way']
+            for p_idx in range(len(way)):
+                for c_idx in range(len(clusters)):
+                    if way[p_idx] in clusters[c_idx]:
+                        way[p_idx] = centroids[c_idx]
+                        break
+
+        # delete zero-length way parts
+        for way_dict in self.ways:
+            way = way_dict['way']
+            i = 0
+            while i < len(way) - 1:
+                if way[i] == way[i+1]:
+                    del way[i+1]
+                    i -= 1
+                i += 1
+
+        # delete zero-length ways
+        for way_dict in self.ways:
+            if len(way_dict['way']) < 2:
+                del way_dict
+
+    def _get_cluster_points(self, current_point, unassigned_points) \
+            -> list[tuple[float, float]]:
+        """
+        A helper method that finds a point cluster recursively.
+        """
+        # init new cluster for current point
+        cluster = []
+        # check all points that belong to no cluster yet
+        i = 0
+        while i < len(unassigned_points):
+            # add point to current cluster and remove them from list of searchable points
+            if almost_same_point(current_point, unassigned_points[i], tolerance=tolerances.point_to_point):
+                cluster.append(unassigned_points.pop(i))
+                i -= 1
+            i += 1
+        # repeat recursively with new found points and add result to current cluster
+        for point in cluster:
+            cluster.extend(self._get_cluster_points(point, unassigned_points))
+        # return found cluster with sub-clusters
+        return cluster
