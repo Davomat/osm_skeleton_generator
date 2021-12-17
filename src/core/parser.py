@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET  # TODO: replace with better Lib, ET doesn't 
 from typing import Union
 
 from core.connection import Connection
-from core.geometry import centroid
+from core.geometry import centroid, simplify_polygon
 from core.osm_helper import beautify_xml
 from core.room import Room
 
@@ -20,6 +20,8 @@ class Parser:
     ----------
     rooms : list[Room]
         All rooms the can be found in the given osm file_name.
+    potential_barriers : list[tuple[list[tuple[float, float]], str]]
+        All walls, bookshelves and other obstacles that should be avoided.
     connections : list[Connection]
         The representations of all doors as points.
     doors : dict[str, list[tuple[float, float]]]
@@ -37,13 +39,22 @@ class Parser:
         Creates a new file with the given name in OSM format to save the calculates ways for navigation.
     """
 
+    tags: dict[str, list[str]] = {
+        'barriers': ["tag[@v='wall']", "tag[@v='bench']", "tag[@v='table']"],
+        'doors': ["tag[@k='door']", "tag[@k='entrance']"],
+        'rooms': ["tag[@v='room']", "tag[@v='corridor']"],
+        'connections': ["tag[@v='connection']"],
+        'multipolygons': ["tag[@v='multipolygon']"]
+    }
+
     def __init__(self, file_name: str):
-        self.root = ET.parse(file_name).getroot()
-        self.rooms = []
-        self.connections = []
-        self.doors = {}
-        self.ways = []
-        self.nodes = {}
+        self.root: ET.Element = ET.parse(file_name).getroot()
+        self.rooms: list[Room] = []
+        self.connections: list[Connection] = []
+        self.doors: dict[str, list[tuple[float, float]]] = {}
+        self.potential_barriers: list[tuple[list[tuple[float, float]], str]] = []
+        self.ways: list[dict[str, Union[list[tuple[float, float]], str]]] = []
+        self.nodes: dict[str, dict[tuple[float, float], int]] = {}
         self._read_data()
 
     def _read_data(self):
@@ -51,39 +62,56 @@ class Parser:
         A helper method that parses the given data.
         Collects information about important nodes (doors), ways (rooms), and relations (connections and multipolygons).
         """
-        # parse nodes
+        # parse nodes to find doors
         for element in self.root.findall("./node[tag]"):
-            if element.find("tag[@k='door']") is not None or element.find("tag[@k='entrance']") is not None:
-                self._parse_door(element)
+            for tag in Parser.tags['doors']:
+                if element.find(tag) is not None:
+                    self._parse_door(element, is_node=True)
+                    break
 
-        # parse ways
+        # parse ways to find doors
         for element in self.root.findall("./way[tag]"):
-            if element.find("tag[@k='door']") is not None or element.find("tag[@k='entrance']") is not None:
-                self._parse_door(element, False)
+            for tag in Parser.tags['doors']:
+                if element.find(tag) is not None:
+                    self._parse_door(element, is_node=False)
+                    break
 
-            elif element.find("tag[@v='room']") is not None or element.find("tag[@v='corridor']") is not None:
-                polygon, level = self._parse_room(element)
-                self.rooms.append(Room(polygon, level))
+        # parse ways to find potential inner_barriers
+        for element in self.root.findall("./way[tag]"):
+            for tag in Parser.tags['barriers']:
+                if element.find(tag) is not None:
+                    self.potential_barriers.append(self._parse_polygon(element))
+                    break
 
-        # parse relations
+        for polygon in self.potential_barriers:
+            simplify_polygon(polygon[0])
+
+        # parse ways to find rooms
+        for element in self.root.findall("./way[tag]"):
+            for tag in Parser.tags['rooms']:
+                if element.find(tag) is not None:
+                    polygon, level = self._parse_polygon(element)
+                    self.rooms.append(Room(polygon, level, self.potential_barriers))
+                    break
+
+        # parse relations to find multipolygons
         for element in self.root.findall("./relation"):
-            if element.find("tag[@v='connection']") is not None:  # find connections between different levels
-                members, con_type = self._parse_connection(element)
-                self.connections.append(Connection(members, con_type))
+            for tag in Parser.tags['multipolygons']:
+                if element.find(tag) is not None:
+                    polygon, level, barriers = self._parse_multipolygon(element)
+                    if polygon is not None:
+                        self.rooms.append(Room(polygon, level, self.potential_barriers, inner_barriers=barriers))
+                    break
 
-            elif element.find("tag[@v='multipolygon']") is not None:  # find multipolygons
-                polygon, level, barriers = self._parse_multipolygon(element)
-                if polygon is not None:
-                    self.rooms.append(Room(polygon, level, barriers))
+        self._remove_duplicated_rooms()
 
-        # remove duplicate rooms (--> multipolygon)
-        for room in self.rooms:
-            for room2 in self.rooms:
-                if room.level == room2.level and room.polygon == room2.polygon and room != room2:
-                    if not room.barriers:
-                        self.rooms.remove(room)
-                    else:
-                        self.rooms.remove(room2)
+        # parse relations to find connections between different levels
+        for element in self.root.findall("./relation"):
+            for tag in Parser.tags['connections']:
+                if element.find(tag) is not None:
+                    members, con_type = self._parse_connection(element)
+                    self.connections.append(Connection(members, con_type))
+                    break
 
     def _parse_door(self, element: ET.Element, is_node=True):
         """
@@ -99,20 +127,18 @@ class Parser:
         else:
             coordinates = []
             for nd in element.findall("nd")[:-1]:
-                node_ref = nd.get('ref')
-                node = self.root.find("./node[@id='" + node_ref + "']")  # find referenced node
+                node = self.root.find("./node[@id='" + nd.get('ref') + "']")  # find referenced node
                 coordinates.append((float(node.get('lat')), float(node.get('lon'))))
             door = centroid(coordinates)
         self.doors[level].append(door)
 
-    def _parse_room(self, element: ET.Element) -> tuple[list[tuple[float, float]], str]:
+    def _parse_polygon(self, element: ET.Element) -> tuple[list[tuple[float, float]], str]:
         """
         A helper method that converts a room element (way) into its corresponding polygon (list of points).
         """
         polygon = []
         for nd in element.findall("nd")[:-1]:
-            node_ref = nd.get('ref')
-            node = (self.root.find("./node[@id='" + node_ref + "']"))
+            node = (self.root.find("./node[@id='" + nd.get('ref') + "']"))
             x = float(node.get('lat'))
             y = float(node.get('lon'))
             polygon.append((x, y))
@@ -128,18 +154,15 @@ class Parser:
         con_type = 'other'
         for member in element.findall("member"):
             polygon = []
-            connector_ref = member.get('ref')
-            connector = self.root.find("./way[@id='" + connector_ref + "']")
+            connector = self.root.find("./way[@id='" + member.get('ref') + "']")
             for nd in connector.findall("nd"):
-                node_ref = nd.get('ref')
-                node = self.root.find("./node[@id='" + node_ref + "']")
+                node = self.root.find("./node[@id='" + nd.get('ref') + "']")
                 x = float(node.get('lat'))
                 y = float(node.get('lon'))
                 polygon.append((x, y))
             connection = {'connector': polygon, 'level': connector.find("tag[@k='level']").get('v')}
             connections.append(connection)
-            if element.find(
-                    "tag[@v='stairs']") is not None:
+            if element.find("tag[@v='stairs']") is not None:
                 con_type = 'stairs'
             else:  # edit if there are more types of connections
                 con_type = 'elevator'
@@ -154,43 +177,41 @@ class Parser:
         """
         polygon = []
         barriers = []
+
         # element is a Element 'relation' with attributes like {'id': '-57497', 'action': 'modify'}
         outer_ref = element.find("member[@role='outer']")
         # outer_ref is a Element 'member' with attributes like {'type': 'way', 'ref': '-56945', 'role': 'outer'}
         outer = self.root.find("./way[@id='" + outer_ref.get('ref') + "']")
         # outer is a Element 'way' with attributes like {'id': '-56945', 'action': 'modify'}
 
+        # find the level and the indoor tag in either the multipolygon or the outer ways
         if element.find("tag[@k='level']") is not None:
             level = element.find("tag[@k='level']").get('v')
         elif outer.find("tag[@k='level']") is not None:
             level = outer.find("tag[@k='level']").get('v')
         else:
-            raise ValueError('No level tag found in Multipolygon {} with Attributes {}'.format(element, element.attrib))
-
+            raise ValueError(f"No level tag found in Multipolygon {element} with Attributes {element.attrib}")
         if element.find("tag[@k='indoor']") is not None:
             building_element = element.find("tag[@k='indoor']").get('v')
         elif outer.find("tag[@k='indoor']") is not None:
             building_element = outer.find("tag[@k='indoor']").get('v')
         else:
-            raise ValueError(
-                'No indoor tag found in Multipolygon {} with Attributes {}'.format(element, element.attrib))
+            raise ValueError(f"No indoor tag found in Multipolygon {element} with Attributes {element.attrib}")
 
+        # parse the multipolygon
         if building_element == 'room' or building_element == 'corridor':
             for member in element.findall("member[@role='inner']"):
                 barrier = []
-                inner_ref = member.get('ref')
-                inner = self.root.find("./way[@id='" + inner_ref + "']")
+                inner = self.root.find("./way[@id='" + member.get('ref') + "']")
                 for nd in inner.findall("nd")[:-1]:
-                    node_ref = nd.get('ref')
-                    node = self.root.find("./node[@id='" + node_ref + "']")
+                    node = self.root.find("./node[@id='" + nd.get('ref') + "']")
                     x = float(node.get('lat'))
                     y = float(node.get('lon'))
                     barrier.append((x, y))
                 barriers.append(barrier)
 
             for nd in outer.findall("nd")[:-1]:
-                node_ref = nd.get('ref')
-                node = self.root.find("./node[@id='" + node_ref + "']")
+                node = self.root.find("./node[@id='" + nd.get('ref') + "']")
                 x = float(node.get('lat'))
                 y = float(node.get('lon'))
                 polygon.append((x, y))
@@ -198,13 +219,36 @@ class Parser:
         else:
             return None, None, None
 
-    def find_ways(self, simplify_ways: bool, door_to_door: bool):
+    def _remove_duplicated_rooms(self):
+        """
+        A helper method that removes duplicate rooms due to parsing for rooms and multipolygons which can be rooms too.
+        It is assumed that multipolygon-rooms are more precise and parsed after way-rooms.
+        """
+        n1 = len(self.rooms) - 2
+        while n1 >= 0:
+            room1 = self.rooms[n1]
+
+            n2 = len(self.rooms) - 1
+            while n2 > n1:
+                room2 = self.rooms[n2]
+
+                if room1 != room2 and room1.level == room2.level and room1.polygon == room2.polygon:
+                    self.rooms.remove(room1)
+                    break
+                n2 -= 1
+            n1 -= 1
+
+    def find_ways(self, simplify_ways_much: bool, door_to_door: bool):
         """
         Calculates the ways for later navigation.
         """
+        i = 0
         for room in self.rooms:
+            i += 1
+            print("room #", i, '/', len(self.rooms), end=' ', flush=True)
             room.add_doors(self.doors)
-            self.ways += room.find_ways(simplify_ways, door_to_door)
+            self.ways += room.find_ways(simplify_ways_much, door_to_door)
+            print("completed.")
 
         for connection in self.connections:
             self.ways += connection.find_ways(self.doors)

@@ -4,6 +4,7 @@ from typing import Union
 import core.polyskel2 as polyskel
 from core.geometry import *
 from core.osm_helper import write_python_way
+import core.tolerances as tolerances
 
 
 class Room:
@@ -16,7 +17,7 @@ class Room:
         A list of points that defines the outer shell of the room's inner area.
     level : str
         The value of the floor on which the room is.
-    barriers : list[list[tuple[float, float]]]
+    inner_barriers : list[list[tuple[float, float]]]
         The objects inside the room that represent obstacles like poles or bookcases.
 
     Attributes
@@ -31,7 +32,7 @@ class Room:
         The calculated ways with their type and level information for later navigation.
     decision_nodes : list[tuple[float, float]]
         The points that connect more than 1 ways / 2 way segments.
-    barriers : list[list[tuple[float, float]]]
+    inner_barriers : list[list[tuple[float, float]]]
         The objects inside the room that represent obstacles like poles or bookcases.
 
     Methods
@@ -43,21 +44,64 @@ class Room:
     """
 
     def __init__(self, polygon: list[tuple[float, float]], level: str,
-                 barriers: list[list[tuple[float, float]]] = None):
-        self.polygon = copy.copy(polygon)
-        self.level = level
-        self.doors = []
-        self.ways = []
+                 potential_barriers: list[tuple[list[tuple[float, float]], str]] = None,
+                 inner_barriers: list[list[tuple[float, float]]] = None):
+        self.polygon: list[tuple[float, float]] = copy.copy(polygon)
+        self.level: str = level
+        self.doors: list[tuple[float, float]] = []
+        self.ways: list[dict[str, Union[list[tuple[float, float]], str]]] = []
         self.decision_nodes = []
-        self.barriers = []
-        if barriers is not None:
-            self.barriers = copy.deepcopy(barriers)
-        simplify_room(self.polygon, self.barriers)
+        self.barriers: list[list[tuple[float, float]]] = copy.deepcopy(inner_barriers) or []
+        self._simplify()
+        self._add_potential_barriers(potential_barriers or [])
+        self._order_polygons()
+
+    def __repr__(self):
+        return repr(self.polygon) + repr(self.level) + repr(self.barriers)
+
+    def _add_potential_barriers(self, potential_barriers: list[tuple[list[tuple[float, float]], str]]):
+        """
+        A helper method that finds and adds barriers inside the room.
+        The barriers must also not be inside predefined inner barriers (other rooms).
+        """
+        additional_barriers = []
+        for potential_barrier in potential_barriers:
+            # check for correct level
+            if self.level != potential_barrier[1]:
+                continue
+            # check for being inside the room polygon
+            if not polygon_inside_polygon(potential_barrier[0], self.polygon, tolerance=tolerances.barrier_to_room):
+                continue
+            # check for being not inside an already assigned barrier (room inside the self room)
+            is_ok = True
+            for inner_barrier in self.barriers:
+                if polygon_inside_polygon(potential_barrier[0], inner_barrier, use_centroids=True):
+                    is_ok = False
+                    break
+            if not is_ok:
+                continue
+            # now the potential_barrier is inside the room and not inside another room
+            additional_barriers.append(potential_barrier[0])
+        self.barriers.extend(additional_barriers)
+
+    def _simplify(self):
+        """
+        Removes every point that lies on the edge between two other points.
+        """
+        simplify_polygon(self.polygon)
+        for barrier in self.barriers:
+            simplify_polygon(barrier)
+
+    def _order_polygons(self):
+        """
+        Ensures that the room polygon is in anticlockwise and the barriers in clockwise order.
+        """
+        # the points of the outer polygon must be in anticlockwise order
         if not anti_clockwise(self.polygon):
             self.polygon.reverse()
-
+        # the points of holes in the polygon must be in clockwise order
         for barrier in self.barriers:
-            if anti_clockwise(barrier):  # the points of holes in the polygon must be passed in clockwise order
+            if anti_clockwise(barrier):
                 barrier.reverse()
 
     def add_doors(self, all_doors: dict[str, list[tuple[float, float]]]):
@@ -65,12 +109,14 @@ class Room:
         Finds and adds the doors that belong to the room.
         """
         if self.level in all_doors:
-            self.doors = add_doors_to_polygon(self.polygon, all_doors[self.level])
-            for i in range(len(self.barriers)):
-                doors = add_doors_to_polygon(self.barriers[i], all_doors[self.level])
+            # check the outer polygon of the room
+            self.doors += add_doors_to_polygon(self.polygon, all_doors[self.level])
+            for barrier in self.barriers:
+                # check for inner rooms
+                doors = add_doors_to_polygon(barrier, all_doors[self.level])
                 self.doors += doors
 
-    def find_ways(self, simplify_ways: bool, door_to_door: bool) \
+    def find_ways(self, simplify_ways_much: bool, door_to_door: bool) \
             -> list[dict[str, Union[list[tuple[float, float]], str]]]:
         """
         Calculates the ways for navigation inside the room.
@@ -83,20 +129,22 @@ class Room:
                 if way_is_valid(point1, point2, self.polygon, self.doors, self.barriers):
                     self.ways.append(write_python_way([point1, point2], self.level))
 
-        self._long_ways()
+        self._enlarge_ways()
         self._remove_useless_ways()
 
-        if simplify_ways:
-            self._simplify_ways()
+        self._simplify_ways(simplify_ways_much)
 
         self._add_supplementary_ways()
+
+        self._reduce_clusters()
+        self._remove_useless_ways()
 
         if door_to_door:
             self._door_to_door()
 
         return self.ways
 
-    def _long_ways(self):
+    def _enlarge_ways(self):
         """
         A helper method that combines several short ways to fewer long ways.
         """
@@ -171,20 +219,36 @@ class Room:
                     if count > 2:
                         self.decision_nodes.append(node)
 
-    def _simplify_ways(self):
+    def _simplify_ways(self, simplify_much: bool):
         """
-        A helper method that deletes all unnecessary parts of the current ways.
+        A helper method that deletes all unnecessary points of the current ways by combining points that are very close.
+        Shortens ways at first from the end to the middle for a most beautiful result.
 
-        Ways consisting of more than 1 segment are shortened if the result is valid.
+        If flag is set, ways consisting of more than 1 segment are shortened if the result is valid.
         """
-        self._remove_duplicate_ways()
         for way in self.ways:
+            i_middle = len(way['way']) // 2
+            # shorten second half of the way from the end
+            i = len(way['way']) - 1
+            while i > i_middle:
+                if almost_same_point(way['way'][i], way['way'][i-1], tolerance=tolerances.point_to_point):
+                    del way['way'][i-1]
+                i -= 1
+            # shorten first half of the ways from the beginning
             i = 0
-            while i < len(way['way']) - 2:
-                if way_inside_room([way['way'][i], way['way'][i + 2]], self.polygon, self.barriers):
-                    del way['way'][i + 1]
+            while i < i_middle and i < len(way['way']) - 1:
+                if almost_same_point(way['way'][i], way['way'][i+1], tolerance=tolerances.point_to_point):
+                    del way['way'][i+1]
                 else:
                     i += 1
+            # simplify way much if flag is set
+            i = 0
+            while i < len(way['way']) - 2:
+                if simplify_much and way_inside_room([way['way'][i], way['way'][i+2]], self.polygon, self.barriers):
+                    del way['way'][i+1]
+                else:
+                    i += 1
+
         self._remove_duplicate_ways()
 
     def _door_to_door(self):
@@ -260,7 +324,7 @@ class Room:
                 else:
                     i += 1
                 if change:
-                    self._long_ways()  # update
+                    self._enlarge_ways()  # update
 
     def _remove_duplicate_ways(self):
         """
@@ -318,3 +382,76 @@ class Room:
 
         self.ways.extend(new_ways)
         self._split_intersecting_ways()
+
+    def _reduce_clusters(self):
+        """
+        A helper method that finds point clusters and reduces them into a single point.
+        """
+        # find all points
+        unassigned_points: list[tuple[float, float]] = []
+        for way_dict in self.ways:
+            way = way_dict['way']
+            for point in way:
+                if point not in unassigned_points:
+                    unassigned_points.append(point)
+
+        # find the clusters with their points
+        clusters: list[list[tuple[float, float]]] = []  # a list of point lists
+        while unassigned_points:
+            current_point = unassigned_points.pop(0)
+            # check if point has close points
+            cluster = self._get_cluster_points(current_point, unassigned_points)
+            # if yes, add to a new clusters entry and check close points for the same cluster entry
+            if cluster:
+                cluster.append(current_point)
+                clusters.append(cluster)
+
+        # get the centroids of the corresponding cluster; the centroid of clusters[k] is centroids[k]
+        centroids: list[tuple[float, float]] = []
+        for cluster in clusters:
+            centroids.append(centroid(cluster))
+
+        # overwrite cluster points in ways
+        for way_dict in self.ways:
+            way = way_dict['way']
+            for p_idx in range(len(way)):
+                for c_idx in range(len(clusters)):
+                    if way[p_idx] in clusters[c_idx]:
+                        way[p_idx] = centroids[c_idx]
+                        break
+
+        # delete zero-length way parts
+        for way_dict in self.ways:
+            way = way_dict['way']
+            i = 0
+            while i < len(way) - 1:
+                if way[i] == way[i+1]:
+                    del way[i+1]
+                    i -= 1
+                i += 1
+
+        # delete zero-length ways
+        for way_dict in self.ways:
+            if len(way_dict['way']) < 2:
+                del way_dict
+
+    def _get_cluster_points(self, current_point, unassigned_points) \
+            -> list[tuple[float, float]]:
+        """
+        A helper method that finds a point cluster recursively.
+        """
+        # init new cluster for current point
+        cluster = []
+        # check all points that belong to no cluster yet
+        i = 0
+        while i < len(unassigned_points):
+            # add point to current cluster and remove them from list of searchable points
+            if almost_same_point(current_point, unassigned_points[i], tolerance=tolerances.point_to_point):
+                cluster.append(unassigned_points.pop(i))
+                i -= 1
+            i += 1
+        # repeat recursively with new found points and add result to current cluster
+        for point in cluster:
+            cluster.extend(self._get_cluster_points(point, unassigned_points))
+        # return found cluster with sub-clusters
+        return cluster
