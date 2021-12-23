@@ -265,7 +265,7 @@ class Parser:
         if bounds_element is not None:
             osm_root.append(bounds_element)
 
-        # add points and ways
+        # add points and cache ways
         processed = {}
         osm_node_id = -2
         osm_way_id = -2
