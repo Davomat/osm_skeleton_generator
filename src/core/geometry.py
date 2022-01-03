@@ -9,7 +9,7 @@ def centroid(points: list[tuple[float, float]]) -> tuple[float, float]:
     Finds the centroid of a polygon.
     """
     x, y = zip(*points)
-    return sum(x) / len(x), sum(y) / (len(y))
+    return sum(x) / len(x), sum(y) / len(y)
 
 
 def in_interval(point1: tuple[float, float], point2: tuple[float, float], point3: tuple[float, float]) -> bool:
