@@ -63,6 +63,25 @@ class Merger:
                 else:
                     self.level_elements[level][name].append(elem)
 
+    def remove_unnecessary_nodes(self, tolerance=1.0):
+        """
+        Finds and deletes nodes within a straight line.
+        """
+        for way in self.ways:
+            # collect information
+            node_refs = way.findall('nd')
+            nodes = [self.root.find("./node[@id='" + node_ref.get('ref') + "']") for node_ref in node_refs]
+            node_coords = [coords(node) for node in nodes]
+            # check for double points
+            for i in range(len(nodes) - 1, 0, -1):
+                if node_coords[i-1] == node_coords[i]:
+                    way.remove(node_refs[i])
+            # check for straight lines
+            slopes = [(node_coords[i+1][0] - node_coords[i][0], node_coords[i+1][1] - node_coords[i][1])
+                      for i in range(len(node_coords) - 1)]
+            # todo if slope of 2 adjacent edge almost equal, the middle point can be removed
+            # or even deleted if not used anywhere else
+
     def merge(self, tolerance: float):
         """
         Finds point clusters in every level and merges them into a single point.
@@ -95,9 +114,28 @@ class Merger:
                         if coords(node) in clusters[cluster_idx]:
                             node.attrib['lat'] = str(centroids[cluster_idx][0])
                             node.attrib['lon'] = str(centroids[cluster_idx][1])
+                            break
 
-            # merge nodes at same position
-            # todo
+            # merge nodes at same position by deleting nodes and re-reference way points
+            for node_idx in range(len(self.nodes)-1, 0, -1):
+                # leave out important nodes like doors
+                if self.nodes[node_idx].find("tag[@k='level']") is not None:
+                    continue
+                # don't look at point that were not in a cluster
+                if coords(self.nodes[node_idx]) not in centroids:
+                    continue
+                # delete node and ref if its on an important position (like under a door) and therefore useless
+                # !!! this causes problems if a door is on an edge (e.g. below stairs)
+                # if coords(self.nodes[node_idx]) in important_level_points:
+                    # self._del_ref(self.nodes[node_idx].get('id'))
+                    # del self.nodes[node_idx]
+                    # continue
+                # otherwise search for other points with same position and re-reference the id
+                for other_idx in range(node_idx):
+                    if coords(self.nodes[node_idx]) == coords(self.nodes[other_idx]):
+                        self._re_ref(self.nodes[node_idx].get('id'), self.nodes[other_idx].get('id'))
+                        del self.nodes[node_idx]
+                        break
 
     def _find_all_level_points(self, level: str) -> list[ET.Element]:
         """
@@ -150,6 +188,24 @@ class Merger:
         # return found cluster with sub-clusters
         return cluster
 
+    def _del_ref(self, node_id: str):
+        """
+        A helper method to delete the referenced node out of self.ways.
+        """
+        for way in self.ways:
+            for node_ref in way.findall('nd'):
+                if node_ref.get('ref') == node_id:
+                    way.remove(node_ref)
+
+    def _re_ref(self, orig_id: str, new_id: str):
+        """
+        A helper method to change the referenced node ids in self.ways.
+        """
+        for way in self.ways:
+            for node_ref in way.findall('nd'):
+                if node_ref.get('ref') == orig_id:
+                    node_ref.set('ref', new_id)
+
     def write_new_file(self):
         """
         Creates a new file with the merged points in OSM format.
@@ -183,5 +239,6 @@ if __name__ == '__main__':
     merge_tolerance = 0.1
 
     merger = Merger(sys.argv[1])
+    merger.remove_unnecessary_nodes()
     merger.merge(merge_tolerance)
     merger.write_new_file()
