@@ -1,3 +1,4 @@
+import math
 import sys
 import xml.etree.ElementTree as ET
 
@@ -6,11 +7,31 @@ from core.osm_helper import beautify_xml
 
 
 def coords(node: ET.Element) -> tuple[float, float]:
+    """ Extracts the latitude and longitude information of a node element. """
     return float(node.get('lat')), float(node.get('lon'))
 
 
 def rounded(point: tuple[float, float], digits: int = 11) -> tuple[float, float]:
+    """ Rounds two floats to n digits in a tuple. """
     return round(point[0], digits), round(point[1], digits)
+
+
+def angle(slope: tuple[float, float]) -> float:
+    """ Calculates the absolute angle of a way segment given as a tuple (dx, dy). """
+    dx = slope[0]
+    dy = slope[1]
+    div = math.sqrt(dx ** 2 + dy ** 2)
+    if div > 0:
+        dx /= div
+        dy /= div
+    return math.copysign(math.acos(dx) * 180 / math.pi, dy) % 360
+
+
+def almost_same_angle(alpha: float, beta: float, tolerance: float) -> bool:
+    """ Checks if two mathematical angles are almost equal. """
+    diff1 = alpha - beta
+    diff2 = (alpha + 180.) % 360 - (beta + 180.) % 360  # for angles around 0 and 360
+    return abs(diff1) <= tolerance or abs(diff2) <= tolerance
 
 
 class Merger:
@@ -22,7 +43,6 @@ class Merger:
         self.output_file_name = input_file_name[:-4] + '__merged' + input_file_name[-4:]
         self.root = ET.parse(input_file_name).getroot()
         self._parse()
-        self._find_max_id()
         self.level_elements: dict[str, dict[str, list[ET.Element]]] = {}
         self._fill_level_elements(self.nodes, 'nodes')
         self._fill_level_elements(self.ways, 'ways')
@@ -35,18 +55,6 @@ class Merger:
         self.nodes = self.root.findall('node')
         self.ways = self.root.findall('way')
         self.relations = self.root.findall('relation')
-
-    def _find_max_id(self):
-        """
-        A helper method to find the highest absolute value of the node id's.
-        """
-        self.max_id = 0
-        for node in self.nodes:
-            node_id = abs(int(node.attrib['id']))
-            if node_id > self.max_id:
-                self.max_id = node_id
-        if int(self.nodes[-1].attrib['id']) < 0:
-            self.max_id = -self.max_id
 
     def _fill_level_elements(self, elements: list[ET.Element], name: str):
         """
@@ -63,7 +71,7 @@ class Merger:
                 else:
                     self.level_elements[level][name].append(elem)
 
-    def remove_unnecessary_nodes(self, tolerance=1.0):
+    def remove_unnecessary_nodes(self, tolerance=2.0):
         """
         Finds and deletes nodes within a straight line.
         """
@@ -76,11 +84,45 @@ class Merger:
             for i in range(len(nodes) - 1, 0, -1):
                 if node_coords[i-1] == node_coords[i]:
                     way.remove(node_refs[i])
+                    node_refs.pop(i)
+                    nodes.pop(i)
+                    node_coords.pop(i)
             # check for straight lines
             slopes = [(node_coords[i+1][0] - node_coords[i][0], node_coords[i+1][1] - node_coords[i][1])
                       for i in range(len(node_coords) - 1)]
-            # todo if slope of 2 adjacent edge almost equal, the middle point can be removed
-            # or even deleted if not used anywhere else
+            slope_angles = [angle(slope) for slope in slopes]
+            # remove middle point of two adjacent edges if their slope angle is almost equal
+            for j in range(len(slope_angles)-1, 0, -1):
+                if almost_same_angle(slope_angles[j-1], slope_angles[j], tolerance):
+                    way.remove(node_refs[j])
+
+        # also delete points with no use
+        self._delete_solitaires()
+
+    def _node_has_ref(self, node: ET.Element) -> bool:
+        """
+        Checks whether a node has a reference in any way element.
+        """
+        for way in self.ways:
+            if node in way.findall('nd'):
+                return True
+        return False
+
+    def _delete_solitaires(self):
+        """
+        Deletes all nodes without information and reference.
+        """
+        # collect all nodes with tags or reference
+        important_nodes = [node for node in self.nodes if node.find("tag") is not None]
+        for way in self.ways:
+            for node_ref in way.findall('nd'):
+                node = self.root.find("./node[@id='" + node_ref.get('ref') + "']")
+                if node not in important_nodes:
+                    important_nodes.append(node)
+        # delete all other nodes
+        for node in self.nodes:
+            if node not in important_nodes:
+                self.nodes.remove(node)
 
     def merge(self, tolerance: float):
         """
