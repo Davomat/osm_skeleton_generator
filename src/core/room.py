@@ -407,9 +407,7 @@ class Room:
                 clusters.append(cluster)
 
         # get the centroids of the corresponding cluster; the centroid of clusters[k] is centroids[k]
-        centroids: list[tuple[float, float]] = []
-        for cluster in clusters:
-            centroids.append(centroid(cluster))
+        centroids: list[tuple[float, float]] = [centroid(cluster) for cluster in clusters]
 
         # overwrite cluster points in ways
         for way_dict in self.ways:

@@ -257,7 +257,15 @@ class Parser:
         """
         Creates a new file with the given name in OSM format to save the calculates ways for navigation.
         """
+        # create a root Element for the data
         osm_root = ET.Element("osm", version='0.6', upload='false')
+
+        # add bounds information if given in the original file
+        bounds_element = self.root.find("bounds")
+        if bounds_element is not None:
+            osm_root.append(bounds_element)
+
+        # add points and cache ways
         processed = {}
         osm_node_id = -2
         osm_way_id = -2
@@ -313,11 +321,14 @@ class Parser:
             ET.SubElement(osm_way, "tag", k="highway", v=way['type'])
             osm_ways.append(osm_way)
 
+        # add ways after points
         for osm_way in osm_ways:
             osm_root.append(osm_way)
 
+        # finalize tree
         tree = ET.ElementTree(osm_root)
         tree.write(file_name, encoding='utf-8', xml_declaration=True)
 
+        # polish up xml file if flag is set
         if beautify:
             beautify_xml(file_name)
