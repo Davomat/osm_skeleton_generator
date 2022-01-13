@@ -184,9 +184,9 @@ class Merger:
         Collects the points that belong to the elements of the given level.
         """
         points = []
-        for node in self.level_elements[level]['nodes']:
+        for node in self.level_elements[level].get('nodes') or []:
             points.append(node)
-        for way in self.level_elements[level]['ways']:
+        for way in self.level_elements[level]['ways'] or []:
             for node_ref in way.findall("nd")[:-1]:
                 node = self.root.find("./node[@id='" + node_ref.get('ref') + "']")  # find referenced node
                 if node not in points:
@@ -278,7 +278,7 @@ if __name__ == '__main__':
     if len(sys.argv) < 2:
         raise AttributeError("You need to specify an input file!")
 
-    merge_tolerance = 0.1
+    merge_tolerance = 0.0000005
 
     merger = Merger(sys.argv[1])
     merger.remove_unnecessary_nodes()
