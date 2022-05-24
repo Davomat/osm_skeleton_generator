@@ -40,7 +40,7 @@ class Parser:
     """
 
     tags: dict[str, list[str]] = {
-        'barriers': ["tag[@v='wall']", "tag[@v='bench']", "tag[@v='table']"],
+        'barriers': ["tag[@v='wall']", "tag[@v='area']", "tag[@v='bench']", "tag[@v='table']", "tag[@v='shelf']"],
         'doors': ["tag[@k='door']", "tag[@k='entrance']"],
         'rooms': ["tag[@v='room']", "tag[@v='corridor']"],
         'connections': ["tag[@v='connection']"],
