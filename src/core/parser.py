@@ -2,9 +2,11 @@ import xml.etree.ElementTree as ET  # TODO: replace with better Lib, ET doesn't 
 from typing import Union
 
 from core.connection import Connection
-from core.geometry import simplify_polygon
+from core.geometry import centroid, simplify_polygon
 from core.osm_helper import beautify_xml
 from core.room import Room
+from core.osm_classes import *
+
 
 
 class Parser:
@@ -40,7 +42,7 @@ class Parser:
     """
 
     tags: dict[str, list[str]] = {
-        'barriers': ["tag[@v='wall']", "tag[@v='area']", "tag[@v='bench']", "tag[@v='table']", "tag[@v='shelf']"],
+        'barriers': ["tag[@v='wall']", "tag[@v='bench']", "tag[@v='table']"],
         'doors': ["tag[@k='door']", "tag[@k='entrance']"],
         'rooms': ["tag[@v='room']", "tag[@v='corridor']"],
         'connections': ["tag[@v='connection']"],
@@ -66,7 +68,14 @@ class Parser:
         for element in self.root.findall("./node[tag]"):
             for tag in Parser.tags['doors']:
                 if element.find(tag) is not None:
-                    self._parse_door(element)
+                    self._parse_door(element, is_node=True)
+                    break
+
+        # parse ways to find doors
+        for element in self.root.findall("./way[tag]"):
+            for tag in Parser.tags['doors']:
+                if element.find(tag) is not None:
+                    self._parse_door(element, is_node=False)
                     break
 
         # parse ways to find potential inner_barriers
@@ -106,25 +115,24 @@ class Parser:
                     self.connections.append(Connection(members, con_type))
                     break
 
-    def _parse_door(self, element: ET.Element):
+    def _parse_door(self, element: ET.Element, is_node=True):
         """
         A helper method that adds a door element (a node or the centroid of a closed way) to the list of doors.
         This list is sorted by level.
         """
-        level_tag = element.find("tag[@k='level']")
-        if level_tag is None:
-            return
-        level_value = level_tag.get('v')
-        if ';' in level_value:
-            levels = level_value.split(';')
-        else:
-            levels = [level_value]
+        level = element.find("tag[@k='level']").get('v')
+        if level not in self.doors:
+            self.doors[level] = []
 
-        for level in levels:
-            if level not in self.doors:
-                self.doors[level] = []
+        if is_node:
             door = (float(element.get('lat')), float(element.get('lon')))
-            self.doors[level].append(door)
+        else:
+            coordinates = []
+            for nd in element.findall("nd")[:-1]:
+                node = self.root.find("./node[@id='" + nd.get('ref') + "']")  # find referenced node
+                coordinates.append((float(node.get('lat')), float(node.get('lon'))))
+            door = centroid(coordinates)
+        self.doors[level].append(door)
 
     def _parse_polygon(self, element: ET.Element) -> tuple[list[tuple[float, float]], str]:
         """
@@ -300,13 +308,16 @@ class Parser:
                 if level not in self.nodes:
                     self.nodes[level] = {}
                     processed[level] = []
+                print("self.nodes=" + str(self.nodes))
                 for node in way['way']:
                     if node not in processed[level]:
                         if node not in self.nodes[level]:
                             self.nodes[level][node] = osm_node_id
                             osm_node_id -= 1
-                        ET.SubElement(osm_root, "node", id=str(self.nodes[level][node]), lat=str(node[0]),
-                                      lon=str(node[1]))
+                        print("node:" + str(node))
+                        #node = tupel_to_point(node)
+                        ET.SubElement(osm_root, "node", id=str(self.nodes[level][node]), lat=str(tupel_to_point(node).x),
+                                      lon=str(tupel_to_point(node).y))
                         processed[level].append(node)
                     ET.SubElement(osm_way, "nd", ref=str(self.nodes[way['level']][node]))
 

@@ -1,31 +1,59 @@
 import math
 from typing import Union
+from core.osm_classes import *
+
 
 import core.tolerances as tolerances
 
 
-def centroid(points: list[tuple[float, float]]) -> tuple[float, float]:
+def centroid(points: list[Point]) -> Point:
     """
     Finds the centroid of a polygon.
     """
-    x, y = zip(*points)
-    return sum(x) / len(x), sum(y) / len(y)
+
+    # !! Extrem dreckiger code, der entfernt werden sollte, wenn alle Klassen konvertiert sind
+    # convert Polygon to list[Point] if it isnt already
+    if not isinstance(points[0], Point):
+        print("Converting tupel to Point")
+        new_polygon = []
+        for p in points:
+            new_polygon.append(Point(p[0], p[1]))
+        points = new_polygon
 
 
-def in_interval(point1: tuple[float, float], point2: tuple[float, float], point3: tuple[float, float]) -> bool:
+    x = []
+    y = []
+    for p in points:
+        x.append(p.x)
+        y.append(p.y)
+    return Point(sum(x) / len(x), sum(y) / len(y))
+
+
+def in_interval(point1: Point, point2: Point, point3: Point) -> bool:
     """
     Checks whether point3 is between point_a and point_b.
     Should only be used for collinear points.
     """
-    x1 = point1[0]
-    y1 = point1[1]
-    x2 = point2[0]
-    y2 = point2[1]
-    x3 = point3[0]
-    y3 = point3[1]
-    if almost_same_point((x1, y1), (x2, y2)) \
-            or almost_same_point((x1, y1), (x3, y3)) \
-            or almost_same_point((x2, y2), (x3, y3)):
+
+    # !! Extrem dreckiger code, der entfernt werden sollte, wenn alle Klassen konvertiert sind
+    # convert Polygon to list[Point] if it isnt already
+    if not isinstance(point1, Point):
+        print("get_line konvertiert tupel zu Point")
+        point1 = Point(point1[0], point1[1])
+    if not isinstance(point2, Point):
+        point2 = Point(point2[0], point2[1])
+    if not isinstance(point3, Point):
+        point3 = Point(point3[0], point3[1])
+
+    x1 = point1.x
+    y1 = point1.y
+    x2 = point2.x
+    y2 = point2.y
+    x3 = point3.x
+    y3 = point3.y
+    if almost_same_point(Point(x1, y1), Point(x2, y2)) \
+            or almost_same_point(Point(x1, y1), Point(x3, y3)) \
+            or almost_same_point(Point(x2, y2), Point(x3, y3)):
         return False
     if x1 < x2:
         if x3 < x1 or x3 > x2:
@@ -43,34 +71,53 @@ def in_interval(point1: tuple[float, float], point2: tuple[float, float], point3
     return True
 
 
-def distance(point1: tuple[float, float], point2: tuple[float, float]) -> float:
+def distance(point1: Point, point2: Point) -> float:
     """
     Calculates the distance between two 2-dimensional points.
     """
-    x1 = point1[0]
-    y1 = point1[1]
-    x2 = point2[0]
-    y2 = point2[1]
+     # !! Extrem dreckiger code, der entfernt werden sollte, wenn alle Klassen konvertiert sind
+    # convert Polygon to list[Point] if it isnt already
+    if not isinstance(point1, Point):
+        print("distance() konvertiert tupel zu Point")
+        point1 = Point(point1[0], point1[1])
+    if not isinstance(point2, Point):
+        point2 = Point(point2[0], point2[1])   
+
+
+    x1 = point1.x
+    y1 = point1.y
+    x2 = point2.x
+    y2 = point2.y
     return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
 
-def get_line(point1: tuple[float, float], point2: tuple[float, float]) -> Union[tuple[float, float],
-                                                                                tuple[None, float]]:
+def get_line(point1: Point, point2: Point) -> Line: #TODO: Was zum fick!?
     """
     Finds the values of the linear equation (y = mx + n) for 2 given points.
     """
-    x1 = point1[0]
-    y1 = point1[1]
-    x2 = point2[0]
-    y2 = point2[1]
+
+    # !! Extrem dreckiger code, der entfernt werden sollte, wenn alle Klassen konvertiert sind
+    # convert Polygon to list[Point] if it isnt already
+    if not isinstance(point1, Point):
+        print("get_line konvertiert tupel zu Point")
+        point1 = Point(point1[0], point1[1])
+    if not isinstance(point2, Point):
+        point2 = Point(point2[0], point2[1])
+    
+
+
+    x1 = point1.x
+    y1 = point1.y
+    x2 = point2.x
+    y2 = point2.y
     if almost_same(x1, x2):  # Bei Senkrechten für b stattdessen den gemeinsamen x-Wert speichern
-        return None, x1
+        return Line(None, x1)
     m = (y1 - y2) / (x1 - x2)
     n = y1 - m * x1
-    return m, n
+    return Line(m, n)
 
 
-def intersection(m1: float, m2: float, n1: float, n2: float) -> Union[None, tuple[float, float]]:
+def intersection(m1: float, m2: float, n1: float, n2: float) -> Union[None, Point]:
     """
     Finds the intersection between two lines (if there is exactly one) given with y = mx + n.
     """
@@ -91,7 +138,7 @@ def intersection(m1: float, m2: float, n1: float, n2: float) -> Union[None, tupl
     else:
         x2 = (n2 - n1) / (m1 - m2)
         y2 = m1 * x2 + n1
-    return x2, y2
+    return Point(x2, y2)
 
 
 # the points in the polygon must be in order!
@@ -101,12 +148,25 @@ def intersection(m1: float, m2: float, n1: float, n2: float) -> Union[None, tupl
 #           |
 
 # ---> Gauß's area formula https://en.wikipedia.org/wiki/Shoelace_formula
-def anti_clockwise(polygon: list[tuple[float, float]]) -> bool:
+def anti_clockwise(polygon: list[Point]) -> bool:
     """
     Checks if a polygon (list of points) is given in an anticlockwise order.
     """
+
+    # !! Extrem dreckiger code, der entfernt werden sollte, wenn alle Klassen konvertiert sind
+    # convert Polygon to list[Point] if it isnt already
+    if not isinstance(polygon[0], Point):
+        print("Converting tupel to Point")
+        new_polygon = []
+        for p in polygon:
+            new_polygon.append(Point(p[0], p[1]))
+        polygon = new_polygon
+
     result = 0
-    x, y = zip(*polygon)
+    x = y = []
+    for point in polygon:
+        x.append(point.x)
+        y.append(point.y)
     length = len(polygon)
     index = length - 1
     index_next = 0
@@ -117,18 +177,25 @@ def anti_clockwise(polygon: list[tuple[float, float]]) -> bool:
     return result < 0
 
 
-def point_inside_polygon(point: tuple[float, float], polygon: list[tuple[float, float]],
+def point_inside_polygon(point: Point, polygon: list[Point],
                          tolerance: float = tolerances.general_mapping_uncertainty) -> bool:
     """
     Checks if a point is inside a polygon (list of points).
 
     The point is also outside the polygon if it is on the line segment between two adjacent points of the polygon.
     """
+    for point in polygon:
+        print(point)
+    print("========")
     if point in polygon:
         return False
+    
     count = 0
-    for polygon_point_a, polygon_point_b in zip(polygon, polygon[1:] + polygon[:1]):
-        if point_is_on_edge(point, (polygon_point_a, polygon_point_b), tolerance):
+    for polygon_point_a, polygon_point_b in wzip(polygon, polygon[1:] + polygon[:1]):
+        print(polygon_point_a)
+        print(polygon_point_b)
+         # todo: Wie zum fick bekomme ich da die ZIP-Funktion raus!?
+        if point_is_on_edge(point, Edge(polygon_point_a, polygon_point_b), tolerance):
             return False
         if polygon_point_a[0] >= point[0] or polygon_point_b[0] >= point[0]:
             if almost_same(point[1], polygon_point_a[1]):
@@ -149,20 +216,23 @@ def point_inside_polygon(point: tuple[float, float], polygon: list[tuple[float, 
     return count % 2 == 1
 
 
-def point_is_on_edge(point: tuple[float, float],
-                     edge: tuple[tuple[float, float], tuple[float, float]],
+def point_is_on_edge(point: Point, ## TODO: Weiteres ersetzen 
+                     edge: Edge,
                      tolerance: float = tolerances.general_mapping_uncertainty) -> bool:
     """
     Checks whether a point is on an edge (on the connection line between the two edge points).
     """
-    if almost_same_point(point, edge[0]) or almost_same_point(point, edge[1]):
+    if almost_same_point(point, edge.Point1) or almost_same_point(point, edge.Point2):
         return True
-    m, b = get_line(edge[0], edge[1])
+    print("EdgePoint1: " + str(edge.Point1))
+    print("EdgePoint2: " + str(edge.Point2))
+    tmpL = get_line(edge.Point1, edge.Point2)
+    m, b = tmpL.m, tmpL.n
     m_orthogonal, b_orthogonal = get_orthogonal_line(m, point)
     intersection_point = intersection(m, m_orthogonal, b, b_orthogonal)
     if almost_same_point(point, intersection_point, tolerance) \
-            and min(edge[0][0], edge[1][0]) <= intersection_point[0] <= max(edge[0][0], edge[1][0]) \
-            and min(edge[0][1], edge[1][1]) <= intersection_point[1] <= max(edge[0][1], edge[1][1]):
+            and min(edge.Point1.x, edge.Point2.x) <= intersection_point.x <= max(edge.Point1.x, edge.Point2.x) \
+            and min(edge.Point1.y, edge.Point2.y) <= intersection_point.y <= max(edge.Point1.y, edge.Point2.y):
         return True
     return False
 
@@ -180,14 +250,22 @@ def point_inside_room(point: tuple[float, float], polygon: list[tuple[float, flo
     return point_inside_polygon(point, polygon)
 
 
-def almost_same_point(point_a: tuple[float, float], point_b: tuple[float, float],
+def almost_same_point(point_a: Point, point_b: Point,
                       tolerance: float = tolerances.general_mapping_uncertainty) -> bool:
     """
     Checks whether 2 points have almost the same coordinates
     """
+    # check if the points are of class Point or tuple
+    # if tuple, convert to Point
+    if not isinstance(point_a, Point):
+        point_a = Point(point_a[0], point_a[1])
+    if not isinstance(point_b, Point):
+        point_b = Point(point_b[0], point_b[1])
+
+
     if point_a is None or point_b is None:
         return False
-    return almost_same(point_a[0], point_b[0], tolerance) and almost_same(point_a[1], point_b[1], tolerance)
+    return almost_same(point_a.x, point_b.x, tolerance) and almost_same(point_a.y, point_b.y, tolerance)
 
 
 def almost_same(value1: float, value2: float, tolerance: float = tolerances.general_mapping_uncertainty) -> bool:
@@ -289,7 +367,8 @@ def add_doors_to_polygon(polygon: list[tuple[float, float]], all_doors: list[tup
         change = False
         while index < len(polygon):
             added_door = False
-            m, b = get_line(polygon[index_prev], polygon[index])
+            tmpL = get_line(polygon[index_prev], polygon[index])
+            m, b = tmpL.m, tmpL.n 
             for door in all_doors:
                 if door not in doors:
                     if door in polygon:
@@ -340,9 +419,10 @@ def simplify_polygon(polygon: list[tuple[float, float]]):
     index_next = 1
     while index_next < len(polygon):
         point = polygon[index]
+        print(polygon[index])
         point_prev = polygon[index_prev]
         point_next = polygon[index_next]
-        if point_is_on_edge(point, (point_prev, point_next)):
+        if point_is_on_edge(point, Edge(point_prev, point_next)):
             del polygon[index]
             if index == 0:
                 index_prev -= 1
