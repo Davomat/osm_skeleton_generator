@@ -36,6 +36,12 @@ class Barrier():
 		self.polygon = polygon
 		self.name = name
 	
+	def simplify(self):
+		# Exposed das simplify des Polygons nach draussen, 
+		# damit für jedes Objekt, egal ob polygon oder höhere abstraktionsform
+		# einfach objekt.simplify() aufgerufen werden kann
+		self.polygon.simplify()
+
 	def __str__(self):
 		return "Barrier(polygon = {}, name = {})".format(self.polygon, self.name)
 	
@@ -68,6 +74,7 @@ class Polygon():
 		area /= 2
 		return area
 
+	# Übernimmt die Funktion von simplify_polygons aus der Parser-Klasse
 	def simplify(self):
 		index = 0
 		index_prev = len(self.points) - 1
@@ -85,6 +92,14 @@ class Polygon():
 				index_prev = index
 				index += 1
 				index_next += 1
+
+	# Obwohl wir eigentlich von Tuples wegwollten, könnte es sein dass einige Funktionen 
+	# von anderen Modulen noch auf Tuples angewiesen sind, deswegen hier eine Funktion
+	def to_tuples(self):
+		tuples = []
+		for point in self.points:
+			tuples.append((point.x, point.y))
+		return tuples
 
 def __str__(self):
 	return "Polygon(points = {}, level = {})".format(self.points, self.level)
