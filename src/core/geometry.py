@@ -237,15 +237,15 @@ def point_is_on_edge(point: Point, ## TODO: Weiteres ersetzen
     return False
 
 
-def point_inside_room(point: tuple[float, float], polygon: list[tuple[float, float]],
-                      barriers: list[list[tuple[float, float]]]) -> bool:
+def point_inside_room(point: Point, polygon: Polygon,
+                      barriers: list[Barrier]) -> bool:
     """
     Checks whether a point is inside a room (polygon with barriers).
     """
     for barrier in barriers:
-        if point in barrier:
+        if point in barrier.polygon:
             return False
-        if point_inside_polygon(point, barrier):
+        if point_inside_polygon(point, barrier.polygon):
             return False
     return point_inside_polygon(point, polygon)
 
@@ -255,6 +255,8 @@ def almost_same_point(point_a: Point, point_b: Point,
     """
     Checks whether 2 points have almost the same coordinates
     """
+    # Wir sind hier noch nicht fertig!
+
     # check if the points are of class Point or tuple
     # if tuple, convert to Point
     if not isinstance(point_a, Point):
@@ -275,13 +277,13 @@ def almost_same(value1: float, value2: float, tolerance: float = tolerances.gene
     return math.isclose(value1, value2, abs_tol=tolerance)
 
 
-def polygon_intersection(way: list[tuple[float, float]], polygon: list[tuple[float, float]]) -> bool:
+def polygon_intersection(way: Polygon, polygon: Polygon) -> bool:
     """
     Checks whether a specific way crosses a part of a polygon.
     """
-    for i in range(len(way) - 1):
-        m_way_segment, n_way_segment = get_line(way[i], way[i + 1], )
-        for polygon_point1, polygon_point2 in zip(polygon, polygon[1:] + polygon[:1]):
+    for i in range(len(way.points) - 1):
+        m_way_segment, n_way_segment = get_line(way.points[i], way.points[i + 1], )
+        for polygon_point1, polygon_point2 in wzip(polygon, polygon.points[1:] + polygon.points[:1]):
             if polygon_point1 != polygon_point2:
                 m_polygon_segment, n_polygon_segment = get_line(polygon_point1, polygon_point2)
                 intersection_point = intersection(m_polygon_segment, m_way_segment, n_polygon_segment, n_way_segment)
@@ -295,23 +297,23 @@ def polygon_intersection(way: list[tuple[float, float]], polygon: list[tuple[flo
     return False
 
 
-def way_inside_room(way: list[tuple[float, float]], polygon: list[tuple[float, float]],
-                    barriers: list[list[tuple[float, float]]]) -> bool:
+def way_inside_room(way: Polygon, polygon: Polygon,
+                    barriers: list[Barrier]) -> bool:
     """
     Checks whether a way is completely inside a room without intersections.
     """
-    for i in range(len(way) - 1):
-        centre = centroid([way[i], way[i + 1]])
+    for i in range(len(way.points) - 1):
+        centre = centroid([way.points[i], way.points[i + 1]])
         if not point_inside_room(centre, polygon, barriers):
             return False
     for barrier in barriers:
-        if polygon_intersection(way, barrier):
+        if polygon_intersection(way.points, barrier.points):
             return False
-    return not polygon_intersection(way, polygon)
+    return not polygon_intersection(way.points, polygon.points)
 
 
-def polygon_inside_polygon(potential_inner_polygon: list[tuple[float, float]],
-                           potential_outer_polygon: list[tuple[float, float]],
+def polygon_inside_polygon(potential_inner_polygon: Polygon,
+                           potential_outer_polygon: Polygon,
                            tolerance: float = tolerances.general_mapping_uncertainty,
                            use_centroids: bool = False) -> bool:
     """
@@ -394,8 +396,8 @@ def add_doors_to_polygon(polygon: list[tuple[float, float]], all_doors: list[tup
     return doors
 
 
-def way_is_valid(point1: tuple[float, float], point2: tuple[float, float], polygon: list[tuple[float, float]],
-                 doors: list[tuple[float, float]], barriers: list[list[tuple[float, float]]]) -> bool:
+def way_is_valid(point1: Point, point2: Point, polygon: Polygon,
+                 doors: list[Point], barriers: list[Barrier]) -> bool:
     """
     Checks whether a way is inside a room and does not collide .
 
@@ -411,6 +413,8 @@ def way_is_valid(point1: tuple[float, float], point2: tuple[float, float], polyg
 
 
 def simplify_polygon(polygon: Polygon):
+    # Diese Funktion sollte nicht mehr benutzt werden!
+    # Stattdessen sollte die Funktion simplify_polygon aus der Klasse Polygon verwendet werden.
     """
     Removes every point that lies on the edge between two other points.
     """

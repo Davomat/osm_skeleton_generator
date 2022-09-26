@@ -101,8 +101,21 @@ class Polygon():
 			tuples.append((point.x, point.y))
 		return tuples
 
-def __str__(self):
-	return "Polygon(points = {}, level = {})".format(self.points, self.level)
+	def is_closed(self):
+		return self.points[0] == self.points[-1]
+
+	def __str__(self):
+		return "Polygon(points = {}, level = {})".format(self.points, self.level)
+
+
+class Way():
+	def __init__(self, points, level=None):
+		self.points = points
+		self.level = level
+	
+	def __str__(self):
+		return "Way(points = {}, level = {})".format(self.points, self.level)
+
 
 class Edge():
 	def __init__(self, Point1, Point2):
