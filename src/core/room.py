@@ -127,7 +127,8 @@ class Room:
         # TODO: Polyskel will eigentlich eine Liste von Tupeln, wenn ich das ganze in Klassen abstrahiere, 
         # evtl doch eine Funktion die _hierfür_ aus einem Polygon-Objekt eine Liste von Tupeln erzeugt (und z.b. das Level weglässt)
 
-        skeleton = polyskel.skeletonize(self.polygon, self.barriers)
+        tupled_polygon = self.polygon.to_tuples()
+        skeleton = polyskel.skeletonize(tupled_polygon, self.barriers)
         for arc in skeleton:
             point1 = (arc.source.x, arc.source.y)
             for sink in arc.sinks:
