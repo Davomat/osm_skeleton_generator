@@ -184,9 +184,9 @@ class Merger:
         Collects the points that belong to the elements of the given level.
         """
         points = []
-        for node in self.level_elements[level].get('nodes') or []:
+        for node in self.level_elements[level]['nodes']:
             points.append(node)
-        for way in self.level_elements[level]['ways'] or []:
+        for way in self.level_elements[level]['ways']:
             for node_ref in way.findall("nd")[:-1]:
                 node = self.root.find("./node[@id='" + node_ref.get('ref') + "']")  # find referenced node
                 if node not in points:
@@ -209,7 +209,7 @@ class Merger:
                 clusters.append(cluster)
         return clusters
 
-    def _get_cluster_points(self, current_point: tuple[float, float], unassigned_points: list[tuple[float, float]],
+    def _get_cluster_points(self, current_point: Point, unassigned_points: list[Point],
                             tolerance: float) -> list:
         """
         A helper method that finds a point cluster from a single given point recursively.
@@ -278,7 +278,7 @@ if __name__ == '__main__':
     if len(sys.argv) < 2:
         raise AttributeError("You need to specify an input file!")
 
-    merge_tolerance = 0.0000005
+    merge_tolerance = 0.1
 
     merger = Merger(sys.argv[1])
     merger.remove_unnecessary_nodes()

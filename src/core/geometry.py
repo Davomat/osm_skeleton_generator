@@ -340,8 +340,8 @@ def get_orthogonal_line(m: Union[float, None], point: tuple[float, float]) -> Un
     """
     Calculates an orthogonal line going through the given point.
     """
-    x = point[0]
-    y = point[1]
+    x = point.x
+    y = point.y
     if m == 0:
         m2 = None
         n2 = x
@@ -410,20 +410,20 @@ def way_is_valid(point1: tuple[float, float], point2: tuple[float, float], polyg
     return False
 
 
-def simplify_polygon(polygon: list[tuple[float, float]]):
+def simplify_polygon(polygon: Polygon):
     """
     Removes every point that lies on the edge between two other points.
     """
     index = 0
-    index_prev = len(polygon) - 1
+    index_prev = len(polygon.points) - 1
     index_next = 1
-    while index_next < len(polygon):
-        point = polygon[index]
-        print(polygon[index])
-        point_prev = polygon[index_prev]
-        point_next = polygon[index_next]
+    while index_next < len(polygon.points):
+        point = polygon.points[index]
+        print(polygon.points[index])
+        point_prev = polygon.points[index_prev]
+        point_next = polygon.points[index_next]
         if point_is_on_edge(point, Edge(point_prev, point_next)):
-            del polygon[index]
+            del polygon.points[index]
             if index == 0:
                 index_prev -= 1
         else:

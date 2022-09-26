@@ -1,4 +1,4 @@
-import xml.etree.ElementTree as ET  # TODO: replace with better Lib, ET doesn't ignore WhiteSpaces --> 'xyz' != ' xyz '
+import xml.etree.ElementTree as ET  
 from typing import Union
 
 from core.connection import Connection
@@ -22,7 +22,13 @@ class Parser:
     ----------
     rooms : list[Room]
         All rooms the can be found in the given osm file_name.
-    potential_barriers : list[tuple[list[tuple[float, float]], str]]
+    potential_barriers : list[tuple
+                                [list[
+                                    tuple[float, float]],
+                                str]
+                                ]
+    potential_barriers NEU -> list[tuple[Polygon, str]]
+                           -> list[Barrier]
         All walls, bookshelves and other obstacles that should be avoided.
     connections : list[Connection]
         The representations of all doors as points.
@@ -54,7 +60,7 @@ class Parser:
         self.rooms: list[Room] = []
         self.connections: list[Connection] = []
         self.doors: dict[str, list[tuple[float, float]]] = {}
-        self.potential_barriers: list[tuple[list[tuple[float, float]], str]] = []
+        self.potential_barriers: list[Barrier] = []
         self.ways: list[dict[str, Union[list[tuple[float, float]], str]]] = []
         self.nodes: dict[str, dict[tuple[float, float], int]] = {}
         self._read_data()
@@ -82,18 +88,19 @@ class Parser:
         for element in self.root.findall("./way[tag]"):
             for tag in Parser.tags['barriers']:
                 if element.find(tag) is not None:
-                    self.potential_barriers.append(self._parse_polygon(element))
+                    tmpBarrier = Barrier(self._parse_polygon(element), element.find(tag).get('v'))
+                    self.potential_barriers.append(tmpBarrier)
                     break
 
         for polygon in self.potential_barriers:
-            simplify_polygon(polygon[0])
+            simplify_polygon(polygon)
 
         # parse ways to find rooms
         for element in self.root.findall("./way[tag]"):
             for tag in Parser.tags['rooms']:
                 if element.find(tag) is not None:
-                    polygon, level = self._parse_polygon(element)
-                    self.rooms.append(Room(polygon, level, self.potential_barriers))
+                    polygon = self._parse_polygon(element)
+                    self.rooms.append(Room(polygon, self.potential_barriers))
                     break
 
         # parse relations to find multipolygons
@@ -102,7 +109,7 @@ class Parser:
                 if element.find(tag) is not None:
                     polygon, level, barriers = self._parse_multipolygon(element)
                     if polygon is not None:
-                        self.rooms.append(Room(polygon, level, self.potential_barriers, inner_barriers=barriers))
+                        self.rooms.append(Room(polygon, self.potential_barriers, inner_barriers=barriers))
                     break
 
         self._remove_duplicated_rooms()
@@ -138,14 +145,18 @@ class Parser:
         """
         A helper method that converts a room element (way) into its corresponding polygon (list of points).
         """
-        polygon = []
+        """
+        brew: Neue Polygonklasse verwenden
+        """
+        polygon = Polygon([])
         for nd in element.findall("nd")[:-1]:
             node = (self.root.find("./node[@id='" + nd.get('ref') + "']"))
             x = float(node.get('lat'))
             y = float(node.get('lon'))
-            polygon.append((x, y))
+            polygon.points.append(Point(x, y))
         level = element.find("tag[@k='level']").get('v')
-        return polygon, level
+        polygon.level = level
+        return polygon
 
     def _parse_connection(self, element: ET.Element) \
             -> tuple[list[dict[str, Union[list[tuple[float, float]], str]]], str]:

@@ -5,6 +5,7 @@ import core.polyskel2 as polyskel
 from core.geometry import *
 from core.osm_helper import write_python_way
 import core.tolerances as tolerances
+from core.osm_classes import *
 
 
 class Room:
@@ -13,20 +14,20 @@ class Room:
 
     Args
     ----
-    polygon : list[tuple[float, float]]
+    polygon : list[tuple[float, float]] -> NEU polygon
         A list of points that defines the outer shell of the room's inner area.
-    level : str
+    level : str -> NEU (in polygon) enthalten
         The value of the floor on which the room is.
     inner_barriers : list[list[tuple[float, float]]]
         The objects inside the room that represent obstacles like poles or bookcases.
 
     Attributes
     ----------
-    polygon : list[tuple[float, float]]
+    polygon : list[tuple[float, float]] -> NEU polygon
         A list of points that defines the outer shell of the room's inner area.
-    level : str
+    level : str -> NEU (in polygon enthalten)
         The value of the floor on which the room is.
-    doors : list[tuple[float, float]]
+    doors : list[tuple[float, float]] -> NEU list[Point]
         The representations of doors as points.
     ways : list[dict[str, Union[list[tuple[float, float]], str]]]
         The calculated ways with their type and level information for later navigation.
@@ -43,15 +44,15 @@ class Room:
         Calculates the ways for navigation inside the room.
     """
 
-    def __init__(self, polygon: list[tuple[float, float]], level: str,
-                 potential_barriers: list[tuple[list[tuple[float, float]], str]] = None,
-                 inner_barriers: list[list[tuple[float, float]]] = None):
-        self.polygon: list[tuple[float, float]] = copy.copy(polygon)
-        self.level: str = level
-        self.doors: list[tuple[float, float]] = []
+    def __init__(self, polygon: Polygon, 
+                 potential_barriers: list[Barrier] = None,
+                 inner_barriers: list[Barrier] = None):
+        self.polygon: Polygon = copy.copy(polygon)
+        self.level: str = polygon.level
+        self.doors: list[Point] = []
         self.ways: list[dict[str, Union[list[tuple[float, float]], str]]] = []
         self.decision_nodes = []
-        self.barriers: list[list[tuple[float, float]]] = copy.deepcopy(inner_barriers) or []
+        self.barriers: list[Barrier] = copy.deepcopy(inner_barriers) or []
         self._simplify()
         self._add_potential_barriers(potential_barriers or [])
         self._order_polygons()
@@ -59,15 +60,16 @@ class Room:
     def __repr__(self):
         return repr(self.polygon) + repr(self.level) + repr(self.barriers)
 
-    def _add_potential_barriers(self, potential_barriers: list[tuple[list[tuple[float, float]], str]]):
+    def _add_potential_barriers(self, potential_barriers: list[Barrier]):
         """
         A helper method that finds and adds barriers inside the room.
         The barriers must also not be inside predefined inner barriers (other rooms).
         """
         additional_barriers = []
         for potential_barrier in potential_barriers:
+            print("PotBar:" + str(potential_barrier))
             # check for correct level
-            if self.level != potential_barrier[1]:
+            if self.level != potential_barrier.polygon.level:
                 continue
             # check for being inside the room polygon
             if not polygon_inside_polygon(potential_barrier[0], self.polygon, tolerance=tolerances.barrier_to_room):
@@ -88,9 +90,10 @@ class Room:
         """
         Removes every point that lies on the edge between two other points.
         """
-        simplify_polygon(self.polygon)
+
+        self.polygon.simplify()
         for barrier in self.barriers:
-            simplify_polygon(barrier)
+            barrier.simplify()
 
     def _order_polygons(self):
         """
@@ -121,6 +124,9 @@ class Room:
         """
         Calculates the ways for navigation inside the room.
         """
+        # TODO: Polyskel will eigentlich eine Liste von Tupeln, wenn ich das ganze in Klassen abstrahiere, 
+        # evtl doch eine Funktion die _hierfür_ aus einem Polygon-Objekt eine Liste von Tupeln erzeugt (und z.b. das Level weglässt)
+
         skeleton = polyskel.skeletonize(self.polygon, self.barriers)
         for arc in skeleton:
             point1 = (arc.source.x, arc.source.y)

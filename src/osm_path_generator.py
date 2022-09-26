@@ -1,7 +1,10 @@
 import sys
 
 from core.parser import Parser
+import datetime
 
+def yy_mm_dd():
+    return datetime.datetime.now().strftime("%Y-%m-%d")
 
 if __name__ == '__main__':
     print()
@@ -12,7 +15,7 @@ if __name__ == '__main__':
 
     # settings and file names
     input_file_name = sys.argv[1]
-    output_file_name = input_file_name[:-4] + '__routes' + input_file_name[-4:]
+    output_file_name = input_file_name[:-4] + '__routes_' + yy_mm_dd() + input_file_name[-4:]
     beautify_xml = '-2l' not in sys.argv
     door_to_door = '-dd' in sys.argv
     simplify_ways = '-sw' in sys.argv
