@@ -92,8 +92,8 @@ class Parser:
                     self.potential_barriers.append(tmpBarrier)
                     break
 
-        for polygon in self.potential_barriers:
-            simplify_polygon(polygon)
+        for barrier in self.potential_barriers:
+            barrier.simplify()
 
         # parse ways to find rooms
         for element in self.root.findall("./way[tag]"):
