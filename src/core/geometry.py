@@ -438,6 +438,26 @@ def simplify_polygon(polygon: Polygon):
 
 def way_intersects_with_way(way: list[tuple[float, float]],
                             ways: list[dict[str, Union[list[tuple[float, float]], str]]]) -> bool:
+    # TODO: Was genau macht diese Funktion?
+    # Warum ist der zweite Parameter "wayS" und was macht das Union dort?
+
+    """
+    list[
+        dict[
+            str, 
+            Union[
+                list[
+                    tuple[
+                            float, 
+                            float
+                        ]
+                    ],
+                     str
+                ]
+            ]
+        ]
+    """
+
     """
     Checks whether a specific way crosses another way.
     """
