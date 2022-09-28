@@ -91,8 +91,10 @@ class Room:
         Removes every point that lies on the edge between two other points.
         """
 
-        self.polygon.simplify()
+        self.polygon.simplify()  
+
         for barrier in self.barriers:
+            print(barrier)
             barrier.simplify()
 
     def _order_polygons(self):

@@ -212,7 +212,7 @@ class Parser:
         # parse the multipolygon
         if building_element == 'room' or building_element == 'corridor':
             for member in element.findall("member[@role='inner']"):
-                barrier = Barrier([], "multipolygon_inner")
+                barrier = Barrier(Polygon([]), "multipolygon_inner")
                 inner = self.root.find("./way[@id='" + member.get('ref') + "']")
                 for nd in inner.findall("nd")[:-1]:
                     node = self.root.find("./node[@id='" + nd.get('ref') + "']")
