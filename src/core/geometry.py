@@ -346,7 +346,7 @@ def get_orthogonal_line(m: Union[float, None], point: Point) -> Union[tuple[floa
     return m2, n2
 
 
-def add_doors_to_polygon(polygon: Polygon, all_doors: list[Point]) -> Polygon:
+def add_doors_to_polygon(polygon: Polygon, all_doors: list[Point]) -> list[Point]:
     """
     Inserts the door points into the polygon.
     """
@@ -372,7 +372,6 @@ def add_doors_to_polygon(polygon: Polygon, all_doors: list[Point]) -> Polygon:
                             in_interval(polygon[index_prev], polygon[index], intersection_point)) \
                                 or almost_same_point(intersection_point, polygon[index] or
                                                      almost_same_point(intersection_point, polygon[index_prev])):
-                            ### TODO: wie setze ich das um?
                             polygon.insert(index, door)
                             doors.append(door)
                             change = True

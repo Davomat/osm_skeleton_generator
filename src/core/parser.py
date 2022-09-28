@@ -59,7 +59,7 @@ class Parser:
         self.root: ET.Element = ET.parse(file_name).getroot()
         self.rooms: list[Room] = []
         self.connections: list[Connection] = []
-        self.doors: dict[str, list[tuple[float, float]]] = {}
+        self.doors: dict[str, list[Point]] = {}
         self.potential_barriers: list[Barrier] = []
         self.ways: list[dict[str, Union[list[tuple[float, float]], str]]] = []
         self.nodes: dict[str, dict[tuple[float, float], int]] = {}
@@ -132,13 +132,13 @@ class Parser:
             self.doors[level] = []
 
         if is_node:
-            door = (float(element.get('lat')), float(element.get('lon')))
+            door = Point(float(element.get('lat')), float(element.get('lon')))
         else:
             coordinates = []
             for nd in element.findall("nd")[:-1]:
                 node = self.root.find("./node[@id='" + nd.get('ref') + "']")  # find referenced node
                 coordinates.append((float(node.get('lat')), float(node.get('lon'))))
-            door = centroid(coordinates)
+            door = Point(centroid(coordinates))
         self.doors[level].append(door)
 
     def _parse_polygon(self, element: ET.Element) -> tuple[list[tuple[float, float]], str]:
