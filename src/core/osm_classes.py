@@ -64,6 +64,9 @@ class Polygon():
 	def __getitem__(self, index):
 		return self.points[index]
 
+	def insert(self, index, point):
+		self.points.insert(index, point)
+
 	# Calculate the centroid of a polygon. brew: Das war Copilot, testen, ob das Funktioniert
 	def centroid(self):
 		x = 0

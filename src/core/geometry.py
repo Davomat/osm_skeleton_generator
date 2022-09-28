@@ -328,8 +328,7 @@ def polygon_inside_polygon(potential_inner_polygon: Polygon,
     return True
 
 
-def get_orthogonal_line(m: Union[float, None], point: tuple[float, float]) -> Union[tuple[float, float],
-                                                                                    tuple[None, float]]:
+def get_orthogonal_line(m: Union[float, None], point: Point) -> Union[tuple[float, float], tuple[None, float]]:
     """
     Calculates an orthogonal line going through the given point.
     """
@@ -347,8 +346,7 @@ def get_orthogonal_line(m: Union[float, None], point: tuple[float, float]) -> Un
     return m2, n2
 
 
-def add_doors_to_polygon(polygon: list[tuple[float, float]], all_doors: list[tuple[float, float]]) \
-        -> list[tuple[float, float]]:
+def add_doors_to_polygon(polygon: Polygon, all_doors: list[Point]) -> Polygon:
     """
     Inserts the door points into the polygon.
     """
@@ -374,6 +372,7 @@ def add_doors_to_polygon(polygon: list[tuple[float, float]], all_doors: list[tup
                             in_interval(polygon[index_prev], polygon[index], intersection_point)) \
                                 or almost_same_point(intersection_point, polygon[index] or
                                                      almost_same_point(intersection_point, polygon[index_prev])):
+                            ### TODO: wie setze ich das um?
                             polygon.insert(index, door)
                             doors.append(door)
                             change = True
