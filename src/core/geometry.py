@@ -155,7 +155,7 @@ def anti_clockwise(polygon: list[Point]) -> bool:
 
     # !! Extrem dreckiger code, der entfernt werden sollte, wenn alle Klassen konvertiert sind
     # convert Polygon to list[Point] if it isnt already
-    if not isinstance(polygon[0], Point):
+    if not isinstance(polygon.points[0], Point):
         print("Converting tupel to Point")
         new_polygon = []
         for p in polygon:
@@ -164,10 +164,10 @@ def anti_clockwise(polygon: list[Point]) -> bool:
 
     result = 0
     x = y = []
-    for point in polygon:
+    for point in polygon.points:
         x.append(point.x)
         y.append(point.y)
-    length = len(polygon)
+    length = len(polygon.points)
     index = length - 1
     index_next = 0
     while index_next < length:
@@ -184,10 +184,10 @@ def point_inside_polygon(point: Point, polygon: list[Point],
 
     The point is also outside the polygon if it is on the line segment between two adjacent points of the polygon.
     """
-    for point in polygon:
+    for point in polygon.points:
         print(point)
     print("========")
-    if point in polygon:
+    if point in polygon.points:
         return False
     
     count = 0
@@ -331,7 +331,7 @@ def polygon_inside_polygon(potential_inner_polygon: Polygon,
                 centroids_inside += 1
         return centroids_inside / len(centroids) >= 1 - tolerances.ratio_barrier_in_barrier
     else:
-        for point in potential_inner_polygon:
+        for point in potential_inner_polygon.points:
             if not point_inside_polygon(point, potential_outer_polygon, tolerance):
                 return False
     return True

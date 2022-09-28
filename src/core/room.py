@@ -72,12 +72,12 @@ class Room:
             if self.level != potential_barrier.polygon.level:
                 continue
             # check for being inside the room polygon
-            if not polygon_inside_polygon(potential_barrier[0], self.polygon, tolerance=tolerances.barrier_to_room):
+            if not polygon_inside_polygon(potential_barrier.polygon, self.polygon, tolerance=tolerances.barrier_to_room):
                 continue
             # check for being not inside an already assigned barrier (room inside the self room)
             is_ok = True
             for inner_barrier in self.barriers:
-                if polygon_inside_polygon(potential_barrier[0], inner_barrier, use_centroids=True):
+                if polygon_inside_polygon(potential_barrier.polygon, inner_barrier, use_centroids=True):
                     is_ok = False
                     break
             if not is_ok:
@@ -101,7 +101,7 @@ class Room:
         """
         # the points of the outer polygon must be in anticlockwise order
         if not anti_clockwise(self.polygon):
-            self.polygon.reverse()
+            self.polygon.points.reverse()
         # the points of holes in the polygon must be in clockwise order
         for barrier in self.barriers:
             if anti_clockwise(barrier):
