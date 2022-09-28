@@ -61,6 +61,9 @@ class Polygon():
 	def __len__(self):
 		return len(self.points)
 
+	def __getitem__(self, index):
+		return self.points[index]
+
 	# Calculate the centroid of a polygon. brew: Das war Copilot, testen, ob das Funktioniert
 	def centroid(self):
 		x = 0
