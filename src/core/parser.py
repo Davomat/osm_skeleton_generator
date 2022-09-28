@@ -181,7 +181,7 @@ class Parser:
                 con_type = 'elevator'
         return connections, con_type
 
-    def _parse_multipolygon(self, element: ET.Element) -> Polygon, str, list[Barrier]:
+    def _parse_multipolygon(self, element: ET.Element) -> tuple[Polygon, str, list[Barrier]]:
         """
         A helper method that converts a multipolygon element (relation) into its corresponding outer polygon and inner
         barriers (also polygons).
@@ -212,7 +212,7 @@ class Parser:
         # parse the multipolygon
         if building_element == 'room' or building_element == 'corridor':
             for member in element.findall("member[@role='inner']"):
-                barrier = []
+                barrier = Barrier([], "multipolygon_inner")
                 inner = self.root.find("./way[@id='" + member.get('ref') + "']")
                 for nd in inner.findall("nd")[:-1]:
                     node = self.root.find("./node[@id='" + nd.get('ref') + "']")
@@ -225,7 +225,7 @@ class Parser:
                 node = self.root.find("./node[@id='" + nd.get('ref') + "']")
                 x = float(node.get('lat'))
                 y = float(node.get('lon'))
-                polygon.polygon.append(Point(x, y))
+                polygon.points.append(Point(x, y))
             return polygon, level, barriers
         else:
             return None, None, None
