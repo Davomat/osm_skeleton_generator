@@ -218,7 +218,7 @@ class Parser:
                     node = self.root.find("./node[@id='" + nd.get('ref') + "']")
                     x = float(node.get('lat'))
                     y = float(node.get('lon'))
-                    barrier.polygon.append(Point(x, y))
+                    barrier.polygon.points.append(Point(x, y))
                 barriers.append(barrier)
 
             for nd in outer.findall("nd")[:-1]:

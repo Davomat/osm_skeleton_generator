@@ -148,19 +148,10 @@ def intersection(m1: float, m2: float, n1: float, n2: float) -> Union[None, Poin
 #           |
 
 # ---> Gauß's area formula https://en.wikipedia.org/wiki/Shoelace_formula
-def anti_clockwise(polygon: list[Point]) -> bool:
+def anti_clockwise(polygon: Polygon) -> bool:
     """
     Checks if a polygon (list of points) is given in an anticlockwise order.
     """
-
-    # !! Extrem dreckiger code, der entfernt werden sollte, wenn alle Klassen konvertiert sind
-    # convert Polygon to list[Point] if it isnt already
-    if not isinstance(polygon.points[0], Point):
-        print("Converting tupel to Point")
-        new_polygon = []
-        for p in polygon:
-            new_polygon.append(Point(p[0], p[1]))
-        polygon = new_polygon
 
     result = 0
     x = y = []
@@ -363,11 +354,11 @@ def add_doors_to_polygon(polygon: list[tuple[float, float]], all_doors: list[tup
     """
     doors = []
     index = 0
-    index_prev = len(polygon) - 1
+    index_prev = len(polygon.points) - 1
     change = True
     while change:
         change = False
-        while index < len(polygon):
+        while index < len(polygon.points):
             added_door = False
             tmpL = get_line(polygon[index_prev], polygon[index])
             m, b = tmpL.m, tmpL.n 

@@ -57,6 +57,10 @@ class Polygon():
 		self.points = points
 		self.level = level
 	
+	# Wenn das Polygon nach seiner Länge gefragt wird, ist die Anzahl der Punkte gemeint
+	def __len__(self):
+		return len(self.points)
+
 	# Calculate the centroid of a polygon. brew: Das war Copilot, testen, ob das Funktioniert
 	def centroid(self):
 		x = 0

@@ -106,8 +106,8 @@ class Room:
             self.polygon.points.reverse()
         # the points of holes in the polygon must be in clockwise order
         for barrier in self.barriers:
-            if anti_clockwise(barrier):
-                barrier.reverse()
+            if anti_clockwise(barrier.polygon):
+                barrier.polygon.points.reverse()
 
     def add_doors(self, all_doors: dict[str, list[tuple[float, float]]]):
         """
