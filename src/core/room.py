@@ -130,7 +130,8 @@ class Room:
         # evtl doch eine Funktion die _hierfür_ aus einem Polygon-Objekt eine Liste von Tupeln erzeugt (und z.b. das Level weglässt)
 
         tupled_polygon = self.polygon.to_tuples()
-        skeleton = polyskel.skeletonize(tupled_polygon, self.barriers)
+        tupled_barriers = [barrier.polygon.to_tuples() for barrier in self.barriers]
+        skeleton = polyskel.skeletonize(tupled_polygon, tupled_barriers)
         for arc in skeleton:
             point1 = (arc.source.x, arc.source.y)
             for sink in arc.sinks:
@@ -385,7 +386,7 @@ class Room:
             for j in range(i + 1, len(all_relevant_nodes)):
                 last_node = all_relevant_nodes[j]
                 if (first_node, last_node) not in excluded:
-                    if way_inside_room([first_node, last_node], self.polygon, self.barriers) and \
+                    if way_inside_room(Polygon([first_node, last_node]), self.polygon, self.barriers) and \
                             not way_intersects_with_way([first_node, last_node], self.ways):
                         new_ways.append(write_python_way([first_node, last_node], self.level))
 

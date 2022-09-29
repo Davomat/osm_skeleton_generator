@@ -52,6 +52,9 @@ class Barrier():
 	def __repr__(self):
 		return self.__str__()
 
+	def to_tuples(self):
+		return self.polygon.to_tuples()
+
 class Polygon():
 	def __init__(self, points, level=None):
 		self.points = points

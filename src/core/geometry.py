@@ -294,7 +294,7 @@ def way_inside_room(way: Polygon, polygon: Polygon,
     Checks whether a way is completely inside a room without intersections.
     """
     for i in range(len(way.points) - 1):
-        centre = centroid([way.points[i], way.points[i + 1]])
+        centre = centroid(Polygon([way.points[i], way.points[i + 1]]))
         if not point_inside_room(centre, polygon, barriers):
             return False
     for barrier in barriers:
@@ -392,7 +392,7 @@ def way_is_valid(point1: Point, point2: Point, polygon: Polygon,
 
     Excludes ways that lead into the corners of the room.
     """
-    if way_inside_room([point1, point2], polygon, barriers):
+    if way_inside_room(Polygon([point1, point2]), polygon, barriers):
         if point1 in doors and (point2 in doors or point_inside_room(point2, polygon, barriers)):
             return True
         if point_inside_room(point1, polygon, barriers) and (
