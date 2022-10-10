@@ -7,11 +7,12 @@ import math
 
 # TODO: Jede Klasse sollte eine Datei sein
 
-def wzip(a,b):
+def wzip(a: list, b: list):
+	# TODO: Umbenennen, aussagekräftigere Var namen
 	r = min(len(a), len(b))
-	result = []
-	for i in range(r):
-		result.append((a[i], b[i]))
+	result = [(a[i], b[i]) for i in range(r)]
+	#for i in range(r):
+	#	result.append((a[i], b[i]))
 
 def tupel_to_point(tupelsuspect):
 	"""
@@ -36,6 +37,7 @@ class Point():
 
 # Da ist noch irgendwas whack dran, eigenlich sind Barrieren Polygone
 class Barrier():
+	# TODO: Nee, der Str ist doch das level...
 	def __init__(self, polygon, name):
 		self.polygon = polygon
 		self.name = name
@@ -222,6 +224,8 @@ def get_orthogonal_line(m: Union[float, None], point: tuple[float, float]) -> Un
     """
     Calculates an orthogonal line going through the given point.
     """
+	# TODO: warum gibt diese Funktion ein tupel zurück und es funktioniert trotzdem?
+	# Wer benutzt das?
     x = point.x
     y = point.y
     if m == 0:
@@ -262,6 +266,9 @@ def get_line(point1: Point, point2: Point) -> Line: #TODO: Was zum fick!?
     """
     Finds the values of the linear equation (y = mx + n) for 2 given points.
     """
+	# TODO: eigentlich brauche ich das gar nicht, die Edge, die hier rauskommt kann man nach ihrem
+	# m und n fragen
+
 
     # !! Extrem dreckiger code, der entfernt werden sollte, wenn alle Klassen konvertiert sind
     # convert Polygon to list[Point] if it isnt already

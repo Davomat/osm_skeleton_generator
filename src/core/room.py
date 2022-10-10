@@ -133,9 +133,9 @@ class Room:
         tupled_barriers = [barrier.polygon.to_tuples() for barrier in self.barriers]
         skeleton = polyskel.skeletonize(tupled_polygon, tupled_barriers)
         for arc in skeleton:
-            point1 = (arc.source.x, arc.source.y)
+            point1 = Point(arc.source.x, arc.source.y)
             for sink in arc.sinks:
-                point2 = (sink.x, sink.y)
+                point2 = Point(sink.x, sink.y)
                 if way_is_valid(point1, point2, self.polygon, self.doors, self.barriers):
                     self.ways.append(write_python_way([point1, point2], self.level))
 
