@@ -2,6 +2,7 @@ from typing import Union
 
 from core.geometry import centroid, add_doors_to_polygon
 from core.osm_helper import write_python_way
+from core.osm_classes import *
 
 
 class Connection:
@@ -17,7 +18,18 @@ class Connection:
 
     Attributes
     ----------
-    members : list[dict[str, Union[list[tuple[float, float]], str]]]
+    members : list[
+                    dict[
+                        str, 
+                        Union[
+                            list[
+                                tuple[float, float]
+                                ],
+                            str
+                        ]
+                    ]
+                ]
+            NEU -> list[Polygon]
         A list of polygons (that are connected) and their level.
     con_type : str
         The type of connection between the members (stairs/elevator).
@@ -30,8 +42,8 @@ class Connection:
         Calculates the ways for navigation inside the room.
     """
 
-    def __init__(self, members: list[dict[str, Union[list[tuple[float, float]], str]]], con_type: str):
-        self.members: list[dict[str, Union[list[tuple[float, float]], str]]] = members
+    def __init__(self, members: list[Polygon], con_type: str):
+        self.members: list[Polygon] = members
         self.type = con_type
         self.ways = []
 
@@ -40,6 +52,11 @@ class Connection:
         """
         Calculates the ways for navigation inside the room.
         """
+
+        for member in self.members:
+            tmpP = Polygon(member["connector"], member["level"])
+            member = tmpP
+
         centres = []
         for connector in self.members:
             centre = centroid(connector['connector'][:-1])

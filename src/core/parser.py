@@ -159,20 +159,20 @@ class Parser:
         return polygon
 
     def _parse_connection(self, element: ET.Element) \
-            -> tuple[list[dict[str, Union[list[tuple[float, float]], str]]], str]:
+            -> tuple[list[Polygon], str]:
         """
         A helper method that converts a connection element (relation) into a list of the corresponding polygons.
         """
         connections = []
         con_type = 'other'
         for member in element.findall("member"):
-            polygon = []
+            polygon = Polygon([])
             connector = self.root.find("./way[@id='" + member.get('ref') + "']")
             for nd in connector.findall("nd"):
                 node = self.root.find("./node[@id='" + nd.get('ref') + "']")
                 x = float(node.get('lat'))
                 y = float(node.get('lon'))
-                polygon.append((x, y))
+                polygon.points.append(Point(x, y))
             connection = {'connector': polygon, 'level': connector.find("tag[@k='level']").get('v')}
             connections.append(connection)
             if element.find("tag[@v='stairs']") is not None:
