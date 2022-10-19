@@ -1,7 +1,12 @@
 import math
 from typing import Union
-from core.osm_classes import *
+# from core.osm_classes import Point, Line, Polygon, Edge, Way, Barrier
 
+from core.osm_classes.Point import Point
+from core.osm_classes.Line import Line
+from core.osm_classes.Polygon import Polygon
+from core.osm_classes.Edge import Edge
+from core.osm_classes.Barrier import Barrier
 
 import core.tolerances as tolerances
 

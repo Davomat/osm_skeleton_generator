@@ -5,7 +5,14 @@ import core.polyskel2 as polyskel
 from core.geometry import *
 from core.osm_helper import write_python_way
 import core.tolerances as tolerances
-from core.osm_classes import *
+
+# Hilfklassen import 
+from core.osm_classes.Point import Point
+from core.osm_classes.Line import Line
+from core.osm_classes.Polygon import Polygon
+from core.osm_classes.Edge import Edge
+from core.osm_classes.Barrier import Barrier
+
 
 
 class Room:

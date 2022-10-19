@@ -2,7 +2,12 @@ from typing import Union
 
 from core.geometry import centroid, add_doors_to_polygon
 from core.osm_helper import write_python_way
-from core.osm_classes import *
+
+from core.osm_classes.Point import Point
+from core.osm_classes.Line import Line
+from core.osm_classes.Polygon import Polygon
+from core.osm_classes.Edge import Edge
+from core.osm_classes.Barrier import Barrier
 
 
 class Connection:
