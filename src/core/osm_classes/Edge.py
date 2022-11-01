@@ -50,25 +50,7 @@ import core.tolerances as tolerances
 from typing import Union
 import math
 
-def wzip(a: list, b: list):
-	# TODO: Umbenennen, aussagekräftigere Var namen
-	r = min(len(a), len(b))
-	result = [(a[i], b[i]) for i in range(r)]
-	#for i in range(r):
-	#	result.append((a[i], b[i]))
 
-def tupel_to_point(tupelsuspect):
-	"""
-	Converts a tupel to a Point instance if it isnt one already
-	"""
-	if not isinstance(tupelsuspect, Point):
-		if isinstance(tupelsuspect, tuple):
-			newp = Point(tupelsuspect[0], tupelsuspect[1])
-			return newp
-		else:
-			raise ValueError('The function got something that is not a tupel nor a Point instance')
-	else:
-		return tupelsuspect
 
 def almost_same_point(point_a: Point, point_b: Point,
                       tolerance: float = tolerances.general_mapping_uncertainty) -> bool:
