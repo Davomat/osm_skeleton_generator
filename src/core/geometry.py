@@ -234,14 +234,14 @@ def point_is_on_edge(point: Point, ## TODO: Weiteres ersetzen
 
 
 def point_inside_room(point: Point, polygon: Polygon,
-                      barriers: list[Barrier]) -> bool:
+                      barriers: list[Polygon]) -> bool:
     """
     Checks whether a point is inside a room (polygon with barriers).
     """
     for barrier in barriers:
-        if point in barrier.polygon:
+        if point in barrier.points:
             return False
-        if point_inside_polygon(point, barrier.polygon):
+        if point_inside_polygon(point, barrier):
             return False
     return point_inside_polygon(point, polygon)
 

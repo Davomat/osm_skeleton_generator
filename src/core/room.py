@@ -59,7 +59,7 @@ class Room:
         self.doors: list[Point] = []
         self.ways: list[dict[str, Union[list[tuple[float, float]], str]]] = []
         self.decision_nodes = []
-        self.barriers: list[Barrier] = copy.deepcopy(inner_barriers) or []
+        self.barriers: list[Polygon] = copy.deepcopy(inner_barriers) or []
         self._simplify()
         self._add_potential_barriers(potential_barriers or [])
         self._order_polygons()
@@ -76,7 +76,7 @@ class Room:
         for potential_barrier in potential_barriers:
             print("PotBar:" + str(potential_barrier))
             # check for correct level
-            if self.level != potential_barrier.polygon.level:
+            if self.level != potential_barrier.level:
                 continue
             # check for being inside the room polygon
             if not polygon_inside_polygon(potential_barrier.polygon, self.polygon, tolerance=tolerances.barrier_to_room):
@@ -113,7 +113,7 @@ class Room:
             self.polygon.points.reverse()
         # the points of holes in the polygon must be in clockwise order
         for barrier in self.barriers:
-            if anti_clockwise(barrier.polygon):
+            if anti_clockwise(barrier):
                 barrier.polygon.points.reverse()
 
     def add_doors(self, all_doors: dict[str, list[tuple[float, float]]]):
@@ -137,7 +137,7 @@ class Room:
         # evtl doch eine Funktion die _hierfür_ aus einem Polygon-Objekt eine Liste von Tupeln erzeugt (und z.b. das Level weglässt)
 
         tupled_polygon = self.polygon.to_tuples()
-        tupled_barriers = [barrier.polygon.to_tuples() for barrier in self.barriers]
+        tupled_barriers = [barrier.to_tuples() for barrier in self.barriers]
         skeleton = polyskel.skeletonize(tupled_polygon, tupled_barriers)
         for arc in skeleton:
             point1 = Point(arc.source.x, arc.source.y)

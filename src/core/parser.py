@@ -67,7 +67,7 @@ class Parser:
         self.rooms: list[Room] = []
         self.connections: list[Connection] = []
         self.doors: dict[str, list[Point]] = {}
-        self.potential_barriers: list[Barrier] = []
+        self.potential_barriers: list[Polygon] = []
         self.ways: list[dict[str, Union[list[tuple[float, float]], str]]] = []
         self.nodes: dict[str, dict[tuple[float, float], int]] = {}
         self._read_data()
@@ -95,7 +95,7 @@ class Parser:
         for element in self.root.findall("./way[tag]"):
             for tag in Parser.tags['barriers']:
                 if element.find(tag) is not None:
-                    tmpBarrier = Barrier(self._parse_polygon(element), element.find(tag).get('v'))
+                    tmpBarrier = Polygon(self._parse_polygon(element).points, element.find(tag).get('v'))
                     self.potential_barriers.append(tmpBarrier)
                     break
 
@@ -188,7 +188,7 @@ class Parser:
                 con_type = 'elevator'
         return connections, con_type
 
-    def _parse_multipolygon(self, element: ET.Element) -> tuple[Polygon, str, list[Barrier]]:
+    def _parse_multipolygon(self, element: ET.Element) -> tuple[Polygon, str, list[Polygon]]:
         """
         A helper method that converts a multipolygon element (relation) into its corresponding outer polygon and inner
         barriers (also polygons).
@@ -219,13 +219,13 @@ class Parser:
         # parse the multipolygon
         if building_element == 'room' or building_element == 'corridor':
             for member in element.findall("member[@role='inner']"):
-                barrier = Barrier(Polygon([]), "multipolygon_inner")
+                barrier = Polygon([], "multipolygon_inner")
                 inner = self.root.find("./way[@id='" + member.get('ref') + "']")
                 for nd in inner.findall("nd")[:-1]:
                     node = self.root.find("./node[@id='" + nd.get('ref') + "']")
                     x = float(node.get('lat'))
                     y = float(node.get('lon'))
-                    barrier.polygon.points.append(Point(x, y))
+                    barrier.points.append(Point(x, y))
                 barriers.append(barrier)
 
             for nd in outer.findall("nd")[:-1]:
