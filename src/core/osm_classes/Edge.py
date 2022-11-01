@@ -95,14 +95,6 @@ def almost_same_point(point_a: Point, point_b: Point,
 	"""
 	Checks whether 2 points have almost the same coordinates
 	"""
-	# Wir sind hier noch nicht fertig!
-
-	# check if the points are of class Point or tuple
-	# if tuple, convert to Point
-	if not isinstance(point_a, Point):
-		point_a = Point(point_a[0], point_a[1])
-	if not isinstance(point_b, Point):
-		point_b = Point(point_b[0], point_b[1])
 
 
 	if point_a is None or point_b is None:
