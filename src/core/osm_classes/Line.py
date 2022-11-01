@@ -10,7 +10,7 @@ print("================")
 
 class Line():
 	"""
-	Eine Abstraktion für eine Linie der Form y = mx + n
+    An abstraction for a line of the form y = mx + n
 	"""
 
 	# TODO: M und N als eigenschaften der Edge-Klasse (property?)

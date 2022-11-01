@@ -8,7 +8,39 @@ from core.osm_classes.Edge import Edge
 
 
 
+
 class Polygon():
+	"""
+	A polygon is a closed way with at least 3 points
+
+	Args
+	----
+	points : list[tuple[float, float]]
+		A list of points that form the polygon.
+	level : str
+		The level of the polygon.
+
+	Attributes
+	----------
+	points : list[Point]
+		A list of points that form the polygon.
+	level : str
+		The level of the polygon.
+	
+	Methods
+	-------
+	centroid()
+		Calculate the centroid of a polygon.
+	area()
+		Calculate the area of a polygon.
+	simplify()
+		Simplify the polygon by removing points that are on a straight line.
+	to_tuples()
+		Convert the polygon to a list of tuples. (This is needed for some functions in other modules)
+	is_closed()
+		Check if the polygon is closed. (We can only calculate the area of a closed polygon)
+		
+	"""
 	def __init__(self, points, level=None):
 		self.points = points
 		self.level = level

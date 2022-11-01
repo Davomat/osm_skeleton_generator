@@ -2,6 +2,16 @@ import core.tolerances as tolerances
 from typing import Union
 import math
 
+
+"""
+Abstraction of a (geographical) Point with x and y coordinates
+
+Args
+    x (float): x coordinate
+    y (float): y coordinate
+"""
+
+
 class Point():
 	def __init__(self, x = 0, y = 0):
 		self.x = x
