@@ -30,6 +30,18 @@ class Edge():
 
 
 
+    We need a Line() class and an Edge() class because converting 
+    from an Edge to a Line is Possible but not the other way around.
+	The "converting" from Edge to m and n is done on demand by the m and n properties.
+
+    
+
+         not possible
+         --------->
+    m, n           Point1, Point2
+         <---------
+         possible    
+
 	"""
 	def __init__(self, Point1, Point2):
 		# check if points are an instance of Point class or of tuple
