@@ -11,6 +11,19 @@ from core.osm_classes.Polygon import Polygon
 
 from core.osm_classes.Point import tupel_to_point
 
+from core.osm_classes.debug import debugprint
+
+
+# Try to import the tqdm module for progress bars
+# if it does not exist define a dummy function that returns the input
+try:
+    from tqdm import tqdm
+    uses_tqdm = True
+except ImportError:
+    uses_tqdm = False
+    def tqdm(x, *args, **kwargs):
+        return x
+
 
 
 
@@ -259,12 +272,14 @@ class Parser:
         Calculates the ways for later navigation.
         """
         i = 0
-        for room in self.rooms:
+        for room in tqdm(self.rooms):
             i += 1
-            print("room #", i, '/', len(self.rooms), end=' ', flush=True)
+            if not uses_tqdm:
+                print("room #", i, '/', len(self.rooms), end=' ', flush=True)
             room.add_doors(self.doors)
             self.ways += room.find_ways(simplify_ways_much, door_to_door)
-            print("completed.")
+            if not uses_tqdm:
+                print("completed.")
 
         for connection in self.connections:
             self.ways += connection.find_ways(self.doors)
@@ -322,13 +337,13 @@ class Parser:
                 if level not in self.nodes:
                     self.nodes[level] = {}
                     processed[level] = []
-                print("self.nodes=" + str(self.nodes))
+                debugprint("self.nodes=" + str(self.nodes))
                 for node in way['way']:
                     if node not in processed[level]:
                         if node not in self.nodes[level]:
                             self.nodes[level][node] = osm_node_id
                             osm_node_id -= 1
-                        print("node:" + str(node))
+                        debugprint("node:" + str(node))
                         #node = tupel_to_point(node)
                         ET.SubElement(osm_root, "node", id=str(self.nodes[level][node]), lat=str(tupel_to_point(node).x),
                                       lon=str(tupel_to_point(node).y))

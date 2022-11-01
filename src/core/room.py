@@ -73,7 +73,7 @@ class Room:
         """
         additional_barriers = []
         for potential_barrier in potential_barriers:
-            print("PotBar:" + str(potential_barrier))
+            debugprint("PotBar:" + str(potential_barrier))
             # check for correct level
             if self.level != potential_barrier.level:
                 continue
@@ -100,7 +100,7 @@ class Room:
         self.polygon.simplify()  
 
         for barrier in self.barriers:
-            print(barrier)
+            debugprint(barrier)
             barrier.simplify()
 
     def _order_polygons(self):

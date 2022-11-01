@@ -4,6 +4,7 @@ import math
 from core.osm_classes.Point import Point
 from core.osm_classes.Line import Line
 
+from core.osm_classes.debug import debugprint
 
 class Edge():
 	"""
@@ -67,8 +68,8 @@ class Edge():
 		"""
 		if almost_same_point(point, self.Point1) or almost_same_point(point, self.Point2):
 			return True
-		print("EdgePoint1: " + str(self.Point1))
-		print("EdgePoint2: " + str(self.Point2))
+		debugprint("EdgePoint1: " + str(self.Point1))
+		debugprint("EdgePoint2: " + str(self.Point2))
 		tmpL = get_line(self.Point1, self.Point2)
 		m, b = tmpL.m, tmpL.n
 		m_orthogonal, b_orthogonal = get_orthogonal_line(m, point)
@@ -157,17 +158,6 @@ def get_line(point1: Point, point2: Point) -> Line: #TODO: Was zum fick!?
 	"""
 	# TODO: eigentlich brauche ich das gar nicht, die Edge, die hier rauskommt kann man nach ihrem
 	# m und n fragen
-
-
-	# !! Extrem dreckiger code, der entfernt werden sollte, wenn alle Klassen konvertiert sind
-	# convert Polygon to list[Point] if it isnt already
-	if not isinstance(point1, Point):
-		print("get_line konvertiert tupel zu Point")
-		point1 = Point(point1[0], point1[1])
-	if not isinstance(point2, Point):
-		point2 = Point(point2[0], point2[1])
-	
-
 
 	x1 = point1.x
 	y1 = point1.y

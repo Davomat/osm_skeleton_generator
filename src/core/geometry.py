@@ -1,6 +1,7 @@
 import math
 from typing import Union
-# from core.osm_classes import Point, Line, Polygon, Edge, Way, Barrier
+
+from core.osm_classes.debug import debugprint
 
 from core.osm_classes.Point import Point
 from core.osm_classes.Line import Line
@@ -16,14 +17,6 @@ def centroid(points: list[Point]) -> Point:
     Finds the centroid of a polygon.
     """
 
-    # !! Extrem dreckiger code, der entfernt werden sollte, wenn alle Klassen konvertiert sind
-    # convert Polygon to list[Point] if it isnt already
-    if not isinstance(points[0], Point):
-        print("Converting tupel to Point")
-        new_polygon = []
-        for p in points:
-            new_polygon.append(Point(p[0], p[1]))
-        points = new_polygon
 
 
     x = []
@@ -43,7 +36,7 @@ def in_interval(point1: Point, point2: Point, point3: Point) -> bool:
     # !! Extrem dreckiger code, der entfernt werden sollte, wenn alle Klassen konvertiert sind
     # convert Polygon to list[Point] if it isnt already
     if not isinstance(point1, Point):
-        print("get_line konvertiert tupel zu Point")
+        debugprint("get_line konvertiert tupel zu Point")
         point1 = Point(point1[0], point1[1])
     if not isinstance(point2, Point):
         point2 = Point(point2[0], point2[1])
@@ -83,7 +76,7 @@ def distance(point1: Point, point2: Point) -> float:
      # !! Extrem dreckiger code, der entfernt werden sollte, wenn alle Klassen konvertiert sind
     # convert Polygon to list[Point] if it isnt already
     if not isinstance(point1, Point):
-        print("distance() konvertiert tupel zu Point")
+        debugprint("distance() konvertiert tupel zu Point")
         point1 = Point(point1[0], point1[1])
     if not isinstance(point2, Point):
         point2 = Point(point2[0], point2[1])   
@@ -104,7 +97,7 @@ def get_line(point1: Point, point2: Point) -> Line: #TODO: Was zum fick!?
     # !! Extrem dreckiger code, der entfernt werden sollte, wenn alle Klassen konvertiert sind
     # convert Polygon to list[Point] if it isnt already
     if not isinstance(point1, Point):
-        print("get_line konvertiert tupel zu Point")
+        debugprint("get_line konvertiert tupel zu Point")
         point1 = Point(point1[0], point1[1])
     if not isinstance(point2, Point):
         point2 = Point(point2[0], point2[1])
@@ -181,16 +174,15 @@ def point_inside_polygon(point: Point, polygon: list[Point],
     The point is also outside the polygon if it is on the line segment between two adjacent points of the polygon.
     """
     for point in polygon.points:
-        print(point)
-    print("========")
+        debugprint(point)
+    debugprint("========")
     if point in polygon.points:
         return False
     
     count = 0
     for polygon_point_a, polygon_point_b in wzip(polygon, polygon[1:] + polygon[:1]):
-        print(polygon_point_a)
-        print(polygon_point_b)
-         # todo: Wie zum fick bekomme ich da die ZIP-Funktion raus!?
+        debugprint(polygon_point_a)
+        debugprint(polygon_point_b)
         if point_is_on_edge(point, Edge(polygon_point_a, polygon_point_b), tolerance):
             return False
         if polygon_point_a[0] >= point[0] or polygon_point_b[0] >= point[0]:
@@ -220,8 +212,8 @@ def point_is_on_edge(point: Point, ## TODO: Weiteres ersetzen
     """
     if almost_same_point(point, edge.Point1) or almost_same_point(point, edge.Point2):
         return True
-    print("EdgePoint1: " + str(edge.Point1))
-    print("EdgePoint2: " + str(edge.Point2))
+    debugprint("EdgePoint1: " + str(edge.Point1))
+    debugprint("EdgePoint2: " + str(edge.Point2))
     tmpL = get_line(edge.Point1, edge.Point2)
     m, b = tmpL.m, tmpL.n
     m_orthogonal, b_orthogonal = get_orthogonal_line(m, point)
@@ -417,7 +409,7 @@ def simplify_polygon(polygon: Polygon):
     index_next = 1
     while index_next < len(polygon.points):
         point = polygon.points[index]
-        print(polygon.points[index])
+        debugprint(polygon.points[index])
         point_prev = polygon.points[index_prev]
         point_next = polygon.points[index_next]
         if point_is_on_edge(point, Edge(point_prev, point_next)):

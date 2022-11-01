@@ -3,10 +3,6 @@ from typing import Union
 import math
 from core.osm_classes.Point import Point
 
-print("================")
-print(Point)
-print("================")
-
 
 class Line():
 	"""

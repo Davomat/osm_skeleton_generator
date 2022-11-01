@@ -6,7 +6,7 @@ from core.osm_classes.Point import Point
 from core.osm_classes.Line import Line
 from core.osm_classes.Edge import Edge
 
-
+from core.osm_classes.debug import debugprint
 
 
 class Polygon():
@@ -83,7 +83,7 @@ class Polygon():
 		index_next = 1
 		while index_next < len(self.points):
 			point = self.points[index]
-			print(self.points[index])
+			debugprint(self.points[index])
 			point_prev = self.points[index_prev]
 			point_next = self.points[index_next]
 			if Edge(point_prev, point_next).is_point_on_edge(point):
