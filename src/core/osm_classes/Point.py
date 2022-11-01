@@ -9,6 +9,11 @@ Abstraction of a (geographical) Point with x and y coordinates
 Args
     x (float): x coordinate
     y (float): y coordinate
+
+Attributes
+    x (float): x coordinate
+    y (float): y coordinate
+    
 """
 
 

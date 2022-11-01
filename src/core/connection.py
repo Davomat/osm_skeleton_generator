@@ -15,25 +15,14 @@ class Connection:
 
     Args
     ----
-    members : list[dict[str, Union[list[tuple[float, float]], str]]]
-        A list of polygons that are connected and their level.
+    members : list[Polygon]
+        A list of polygons that are connected
     con_type : str
         The type of connection between the members (stairs/elevator).
 
     Attributes
     ----------
-    members : list[
-                    dict[
-                        str, 
-                        Union[
-                            list[
-                                tuple[float, float]
-                                ],
-                            str
-                        ]
-                    ]
-                ]
-            NEU -> list[Polygon]
+    members : list[Polygon]
         A list of polygons (that are connected) and their level.
     con_type : str
         The type of connection between the members (stairs/elevator).

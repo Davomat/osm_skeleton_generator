@@ -11,7 +11,17 @@ print("================")
 class Line():
 	"""
     An abstraction for a line of the form y = mx + n
-	"""
+
+    We need a Line() class and an Edge() class because converting 
+    from an Edge to a Line is Possible but not the other way around.
+    
+
+         not possible
+         --------->
+    m, n           Point1, Point2
+         <---------
+         possible    
+    """
 
 	# TODO: M und N als eigenschaften der Edge-Klasse (property?)
 	# Beim init der Edge-Klasse berechnen statt zu übergeben
