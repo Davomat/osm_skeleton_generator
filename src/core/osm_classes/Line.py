@@ -125,15 +125,6 @@ def get_line(point1: Point, point2: Point) -> Line: #TODO: Was zum fick!?
     """
 	# TODO: eigentlich brauche ich das gar nicht, die Edge, die hier rauskommt kann man nach ihrem
 	# m und n fragen
-
-
-    # !! Extrem dreckiger code, der entfernt werden sollte, wenn alle Klassen konvertiert sind
-    # convert Polygon to list[Point] if it isnt already
-    if not isinstance(point1, Point):
-        print("get_line konvertiert tupel zu Point")
-        point1 = Point(point1[0], point1[1])
-    if not isinstance(point2, Point):
-        point2 = Point(point2[0], point2[1])
     
 
 
