@@ -8,7 +8,6 @@ from core.room import Room
 from core.osm_classes.Point import Point
 from core.osm_classes.Line import Line
 from core.osm_classes.Polygon import Polygon
-from core.osm_classes.Barrier import Barrier
 
 from core.osm_classes.helper import *
 from core.osm_classes.Point import tupel_to_point

@@ -11,7 +11,6 @@ from core.osm_classes.Point import Point
 from core.osm_classes.Line import Line
 from core.osm_classes.Polygon import Polygon
 from core.osm_classes.Edge import Edge
-from core.osm_classes.Barrier import Barrier
 
 
 
@@ -52,8 +51,8 @@ class Room:
     """
 
     def __init__(self, polygon: Polygon, 
-                 potential_barriers: list[Barrier] = None,
-                 inner_barriers: list[Barrier] = None):
+                 potential_barriers: list[Polygon] = None,
+                 inner_barriers: list[Polygon] = None):
         self.polygon: Polygon = copy.copy(polygon)
         self.level: str = polygon.level
         self.doors: list[Point] = []
@@ -67,7 +66,7 @@ class Room:
     def __repr__(self):
         return repr(self.polygon) + repr(self.level) + repr(self.barriers)
 
-    def _add_potential_barriers(self, potential_barriers: list[Barrier]):
+    def _add_potential_barriers(self, potential_barriers: list[Polygon]):
         """
         A helper method that finds and adds barriers inside the room.
         The barriers must also not be inside predefined inner barriers (other rooms).

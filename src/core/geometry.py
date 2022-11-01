@@ -6,7 +6,7 @@ from core.osm_classes.Point import Point
 from core.osm_classes.Line import Line
 from core.osm_classes.Polygon import Polygon
 from core.osm_classes.Edge import Edge
-from core.osm_classes.Barrier import Barrier
+
 
 import core.tolerances as tolerances
 
@@ -294,7 +294,7 @@ def polygon_intersection(way: Polygon, polygon: Polygon) -> bool:
 
 
 def way_inside_room(way: Polygon, polygon: Polygon,
-                    barriers: list[Barrier]) -> bool:
+                    barriers: list[Polygon]) -> bool:
     """
     Checks whether a way is completely inside a room without intersections.
     """
@@ -391,7 +391,7 @@ def add_doors_to_polygon(polygon: Polygon, all_doors: list[Point]) -> list[Point
 
 
 def way_is_valid(point1: Point, point2: Point, polygon: Polygon,
-                 doors: list[Point], barriers: list[Barrier]) -> bool:
+                 doors: list[Point], barriers: list[Polygon]) -> bool:
     """
     Checks whether a way is inside a room and does not collide .
 
