@@ -49,9 +49,9 @@ def in_interval(point1: Point, point2: Point, point3: Point) -> bool:
     y2 = point2.y
     x3 = point3.x
     y3 = point3.y
-    if almost_same_point(Point(x1, y1), Point(x2, y2)) \
-            or almost_same_point(Point(x1, y1), Point(x3, y3)) \
-            or almost_same_point(Point(x2, y2), Point(x3, y3)):
+    if Point.almost_same_point(Point(x1, y1), Point(x2, y2)) \
+            or Point.almost_same_point(Point(x1, y1), Point(x3, y3)) \
+            or Point.almost_same_point(Point(x2, y2), Point(x3, y3)):
         return False
     if x1 < x2:
         if x3 < x1 or x3 > x2:
@@ -243,7 +243,6 @@ def almost_same_point(point_a: Point, point_b: Point,
     """
     Checks whether 2 points have almost the same coordinates
     """
-    # Wir sind hier noch nicht fertig!
 
     # check if the points are of class Point or tuple
     # if tuple, convert to Point

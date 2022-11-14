@@ -1,3 +1,6 @@
+import core.tolerances as tolerances
+import math
+
 """
 Abstraction of a (geographical) Point with x and y coordinates
 
@@ -20,7 +23,23 @@ class Point():
 	def __str__(self):
 		return "Point(x = {}, y = {})".format(self.x, self.y)
 
+	@staticmethod
+	def almost_same_point(point_a, point_b, tolerance=tolerances.general_mapping_uncertainty):
+		"""
+		Checks whether 2 points have almost the same coordinates
+		"""
 
+
+		if point_a is None or point_b is None:
+			return False
+		return Point.almost_same(point_a.x, point_b.x, tolerance) and Point.almost_same(point_a.y, point_b.y, tolerance)
+
+	@staticmethod
+	def almost_same(value1, value2, tolerance=tolerances.general_mapping_uncertainty):
+		"""
+		Checks whether 2 values are in the same range within a specific tolerance.
+		"""
+		return math.isclose(value1, value2, abs_tol=tolerance)
 
 import core.tolerances as tolerances
 from typing import Union
