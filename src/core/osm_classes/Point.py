@@ -1,8 +1,3 @@
-import core.tolerances as tolerances
-from typing import Union
-import math
-
-
 """
 Abstraction of a (geographical) Point with x and y coordinates
 
@@ -13,7 +8,7 @@ Args
 Attributes
     x (float): x coordinate
     y (float): y coordinate
-    
+
 """
 
 

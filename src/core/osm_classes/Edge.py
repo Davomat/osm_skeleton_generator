@@ -85,12 +85,7 @@ class Edge():
 
 
 
-import core.tolerances as tolerances
-from typing import Union
-import math
-
-
-
+#->point.py
 def almost_same_point(point_a: Point, point_b: Point,
 					  tolerance: float = tolerances.general_mapping_uncertainty) -> bool:
 	"""
@@ -109,6 +104,7 @@ def almost_same(value1: float, value2: float, tolerance: float = tolerances.gene
 	"""
 	return math.isclose(value1, value2, abs_tol=tolerance)
 
+#-> line.py
 def get_orthogonal_line(m: Union[float, None], point: tuple[float, float]) -> Union[tuple[float, float],
 																					tuple[None, float]]:
 	"""
@@ -129,6 +125,7 @@ def get_orthogonal_line(m: Union[float, None], point: tuple[float, float]) -> Un
 		n2 = y - m2 * x
 	return m2, n2
 
+#line.py
 def intersection(m1: float, m2: float, n1: float, n2: float) -> Union[None, Point]:
 	"""
 	Finds the intersection between two lines (if there is exactly one) given with y = mx + n.

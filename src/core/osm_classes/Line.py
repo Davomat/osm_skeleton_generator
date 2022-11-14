@@ -1,6 +1,3 @@
-import core.tolerances as tolerances
-from typing import Union
-import math
 from core.osm_classes.Point import Point
 
 

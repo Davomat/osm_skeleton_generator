@@ -132,8 +132,8 @@ class Room:
         """
         Calculates the ways for navigation inside the room.
         """
-        # TODO: Polyskel will eigentlich eine Liste von Tupeln, wenn ich das ganze in Klassen abstrahiere, 
-        # evtl doch eine Funktion die _hierfür_ aus einem Polygon-Objekt eine Liste von Tupeln erzeugt (und z.b. das Level weglässt)
+        # Polyskel will eigentlich eine Liste von Tupeln, wenn ich das ganze in Klassen abstrahiere, 
+        # Aber es gibt eine Funktion die _hierfür_ aus einem Polygon-Objekt eine Liste von Tupeln erzeugt (und z.b. das Level weglässt)
 
         tupled_polygon = self.polygon.to_tuples()
         tupled_barriers = [barrier.to_tuples() for barrier in self.barriers]
