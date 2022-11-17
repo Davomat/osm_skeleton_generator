@@ -204,7 +204,7 @@ def point_inside_polygon(point: Point, polygon: list[Point],
     return count % 2 == 1
 
 
-def point_is_on_edge(point: Point, ## TODO: Weiteres ersetzen 
+def point_is_on_edge(point: Point,
                      edge: Edge,
                      tolerance: float = tolerances.general_mapping_uncertainty) -> bool:
     """
