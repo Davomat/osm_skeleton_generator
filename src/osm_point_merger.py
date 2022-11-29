@@ -2,7 +2,6 @@ import math
 import sys
 import xml.etree.ElementTree as ET
 
-# Take almost_same_point from core.osm_classes.Point and not from geometry.py
 
 from core.geometry import centroid
 from core.osm_helper import beautify_xml

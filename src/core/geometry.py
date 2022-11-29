@@ -11,13 +11,10 @@ from core.osm_classes.Edge import Edge
 
 import core.tolerances as tolerances
 
-
 def centroid(points: list[Point]) -> Point:
     """
     Finds the centroid of a polygon.
     """
-
-
 
     x = []
     y = []
