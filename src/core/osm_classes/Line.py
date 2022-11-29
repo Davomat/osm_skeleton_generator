@@ -16,8 +16,6 @@ class Line():
 	    possible    
     """
 
-	# TODO: M und N als eigenschaften der Edge-Klasse (property?)
-	# Beim init der Edge-Klasse berechnen statt zu übergeben
 	def __init__(self, m, n):
 		self.m = m
 		self.n = n
