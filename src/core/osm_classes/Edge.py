@@ -114,9 +114,6 @@ class Edge():
 		"""
 		Finds the values of the linear equation (y = mx + n) for 2 given points.
 		"""
-		# TODO: eigentlich brauche ich das gar nicht, die Edge, die hier rauskommt kann man nach ihrem
-		# m und n fragen
-
 		x1 = point1.x
 		y1 = point1.y
 		x2 = point2.x

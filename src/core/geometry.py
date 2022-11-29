@@ -33,16 +33,6 @@ def in_interval(point1: Point, point2: Point, point3: Point) -> bool:
     Should only be used for collinear points.
     """
 
-    # !! Extrem dreckiger code, der entfernt werden sollte, wenn alle Klassen konvertiert sind
-    # convert Polygon to list[Point] if it isnt already
-    if not isinstance(point1, Point):
-        debugprint("get_line konvertiert tupel zu Point")
-        point1 = Point(point1[0], point1[1])
-    if not isinstance(point2, Point):
-        point2 = Point(point2[0], point2[1])
-    if not isinstance(point3, Point):
-        point3 = Point(point3[0], point3[1])
-
     x1 = point1.x
     y1 = point1.y
     x2 = point2.x
@@ -73,14 +63,6 @@ def distance(point1: Point, point2: Point) -> float:
     """
     Calculates the distance between two 2-dimensional points.
     """
-     # !! Extrem dreckiger code, der entfernt werden sollte, wenn alle Klassen konvertiert sind
-    # convert Polygon to list[Point] if it isnt already
-    if not isinstance(point1, Point):
-        debugprint("distance() konvertiert tupel zu Point")
-        point1 = Point(point1[0], point1[1])
-    if not isinstance(point2, Point):
-        point2 = Point(point2[0], point2[1])   
-
 
     x1 = point1.x
     y1 = point1.y
@@ -89,20 +71,10 @@ def distance(point1: Point, point2: Point) -> float:
     return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
 
-def get_line(point1: Point, point2: Point) -> Line: #TODO: Was zum fick!?
+def get_line(point1: Point, point2: Point) -> Line:
     """
     Finds the values of the linear equation (y = mx + n) for 2 given points.
-    """
-
-    # !! Extrem dreckiger code, der entfernt werden sollte, wenn alle Klassen konvertiert sind
-    # convert Polygon to list[Point] if it isnt already
-    if not isinstance(point1, Point):
-        debugprint("get_line konvertiert tupel zu Point")
-        point1 = Point(point1[0], point1[1])
-    if not isinstance(point2, Point):
-        point2 = Point(point2[0], point2[1])
-    
-
+    """    
 
     x1 = point1.x
     y1 = point1.y
