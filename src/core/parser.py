@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET
 from typing import Union
 
 from core.connection import Connection
-from core.geometry import centroid, simplify_polygon
+from core.geometry import centroid
 from core.osm_helper import beautify_xml
 from core.room import Room
 from core.osm_classes.Point import Point

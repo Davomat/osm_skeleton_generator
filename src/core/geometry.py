@@ -350,34 +350,8 @@ def way_is_valid(point1: Point, point2: Point, polygon: Polygon,
     return False
 
 
-def simplify_polygon(polygon: Polygon):
-    # Diese Funktion sollte nicht mehr benutzt werden!
-    # Stattdessen sollte die Funktion simplify_polygon aus der Klasse Polygon verwendet werden.
-    """
-    Removes every point that lies on the edge between two other points.
-    """
-    index = 0
-    index_prev = len(polygon.points) - 1
-    index_next = 1
-    while index_next < len(polygon.points):
-        point = polygon.points[index]
-        debugprint(polygon.points[index])
-        point_prev = polygon.points[index_prev]
-        point_next = polygon.points[index_next]
-        if point_is_on_edge(point, Edge(point_prev, point_next)):
-            del polygon.points[index]
-            if index == 0:
-                index_prev -= 1
-        else:
-            index_prev = index
-            index += 1
-            index_next += 1
-
-
 def way_intersects_with_way(way: list[tuple[float, float]],
                             ways: list[dict[str, Union[list[tuple[float, float]], str]]]) -> bool:
-    # TODO: Was genau macht diese Funktion?
-    # Warum ist der zweite Parameter "wayS" und was macht das Union dort?
 
     """
     list[
